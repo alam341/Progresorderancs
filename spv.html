@@ -87,12 +87,12 @@ body { font-family:'Plus Jakarta Sans',system-ui,sans-serif; background:var(--bg
 .page-sub { font-size:13px; color:var(--muted); margin-top:3px; }
 
 /* DATE FILTER */
-.date-bar { display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
-.date-btn { background:var(--bg3); border:1px solid var(--border); color:var(--muted2); padding:6px 14px; border-radius:20px; font-size:12px; font-weight:500; cursor:pointer; transition:all 0.15s; font-family:'Plus Jakarta Sans',sans-serif; white-space:nowrap; }
-.date-btn:hover { border-color:var(--accent); color:var(--accent); }
-.date-btn.active { background:var(--accent); border-color:var(--accent); color:#fff; }
-input[type=date] { background:var(--bg3); border:1px solid var(--border); color:var(--text); padding:6px 12px; border-radius:10px; font-size:12px; outline:none; font-family:'Plus Jakarta Sans',sans-serif; }
-input[type=date]:focus { border-color:var(--accent); }
+
+
+
+
+
+
 
 /* TEAM TABS */
 .team-tabs { display:flex; gap:6px; margin-bottom:1.5rem; flex-wrap:wrap; }
@@ -148,6 +148,59 @@ input[type=date]:focus { border-color:var(--accent); }
   .page-header { flex-direction:column; gap:8px; }
   .sidebar-toggle { display:none; }
 }
+
+/* ── DATE RANGE PICKER ──────────────────────────────────── */
+.drp-wrap { position:relative; display:inline-block; }
+.drp-trigger {
+  display:flex; align-items:center; gap:8px;
+  background:var(--bg3); border:1px solid var(--border);
+  color:var(--text); padding:7px 14px; border-radius:10px;
+  cursor:pointer; font-size:13px; font-weight:500;
+  transition:all 0.15s; user-select:none;
+  font-family:'Plus Jakarta Sans',sans-serif; white-space:nowrap;
+}
+.drp-trigger:hover { border-color:var(--accent); }
+.drp-trigger.active { border-color:var(--accent); background:rgba(168,85,247,0.08); }
+.drp-panel {
+  display:none; position:absolute; top:calc(100% + 8px); left:0;
+  background:var(--bg2); border:1px solid var(--border);
+  border-radius:16px; box-shadow:0 16px 48px rgba(0,0,0,0.4);
+  z-index:300; overflow:hidden; min-width:500px;
+}
+.drp-panel.open { display:flex; }
+@media(max-width:600px) {
+  .drp-panel { min-width:unset; width:calc(100vw - 2rem); flex-direction:column; left:0; right:0; }
+}
+.drp-presets { width:155px; border-right:1px solid var(--border); padding:0.75rem 0; flex-shrink:0; }
+.drp-preset-group { font-size:10px; font-weight:700; color:var(--muted); text-transform:uppercase; letter-spacing:0.6px; padding:0.5rem 1rem 0.25rem; }
+.drp-preset-item { display:flex; align-items:center; gap:8px; padding:8px 1rem; font-size:12px; color:var(--muted2); cursor:pointer; transition:all 0.12s; }
+.drp-preset-item:hover { background:rgba(168,85,247,0.06); color:var(--text); }
+.drp-preset-item.selected { color:var(--accent); font-weight:600; }
+.drp-preset-dot { width:7px; height:7px; border-radius:50%; border:2px solid var(--border2); flex-shrink:0; }
+.drp-preset-item.selected .drp-preset-dot { background:var(--accent); border-color:var(--accent); }
+.drp-cal { padding:1rem; flex:1; min-width:0; }
+.drp-cal-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:0.75rem; }
+.drp-cal-title { font-size:14px; font-weight:700; }
+.drp-cal-nav { background:none; border:1px solid var(--border); color:var(--muted2); width:28px; height:28px; border-radius:8px; cursor:pointer; font-size:14px; display:flex; align-items:center; justify-content:center; transition:all 0.12s; }
+.drp-cal-nav:hover { border-color:var(--accent); color:var(--accent); }
+.drp-days-header { display:grid; grid-template-columns:repeat(7,1fr); margin-bottom:4px; }
+.drp-day-name { text-align:center; font-size:10px; font-weight:600; color:var(--muted); padding:4px 0; }
+.drp-days { display:grid; grid-template-columns:repeat(7,1fr); gap:1px; }
+.drp-day { text-align:center; padding:7px 2px; font-size:12px; font-weight:500; border-radius:8px; cursor:pointer; transition:background 0.1s; color:var(--text); user-select:none; }
+.drp-day:hover:not(.drp-other):not(.drp-empty) { background:rgba(168,85,247,0.15); }
+.drp-other { color:var(--muted); opacity:0.35; pointer-events:none; }
+.drp-today { font-weight:800; color:var(--accent); }
+.drp-in-range { background:rgba(168,85,247,0.12); border-radius:0; }
+.drp-start { background:var(--accent) !important; color:#fff !important; font-weight:700; border-radius:8px 0 0 8px; }
+.drp-end   { background:var(--accent) !important; color:#fff !important; font-weight:700; border-radius:0 8px 8px 0; }
+.drp-start.drp-end { border-radius:8px; }
+.drp-footer { padding:0.75rem 1rem; border-top:1px solid var(--border); display:flex; align-items:center; justify-content:space-between; gap:8px; flex-wrap:wrap; }
+.drp-range-label { font-size:11px; color:var(--muted2); font-family:'JetBrains Mono',monospace; flex:1; }
+.drp-btn-apply { background:var(--accent); color:#fff; border:none; padding:6px 14px; border-radius:8px; font-size:12px; font-weight:700; cursor:pointer; font-family:'Plus Jakarta Sans',sans-serif; }
+.drp-btn-apply:hover { opacity:0.9; }
+.drp-btn-clear { background:none; border:1px solid var(--border); color:var(--muted); padding:6px 10px; border-radius:8px; font-size:12px; cursor:pointer; font-family:'Plus Jakarta Sans',sans-serif; transition:all 0.12s; }
+.drp-btn-clear:hover { border-color:var(--danger); color:var(--danger); }
+
 </style>
 </head>
 <body>
@@ -180,11 +233,9 @@ input[type=date]:focus { border-color:var(--accent); }
           <div class="page-title">📦 Progres Orderan CS</div>
           <div class="page-sub" id="orderan-sub">Rekap status pengiriman per CS</div>
         </div>
-        <div class="date-bar">
-          <button class="date-btn active" id="ob-today" onclick="setOrderanDate('today')">Hari Ini</button>
-          <button class="date-btn" id="ob-yesterday" onclick="setOrderanDate('yesterday')">Kemarin</button>
-          <button class="date-btn" id="ob-all" onclick="setOrderanDate('all')">Semua</button>
-          <input type="date" id="orderan-date" onchange="loadOrderan()" />
+        <div class="drp-wrap">
+          <div class="drp-trigger" id="orderan-drp-trigger">📅 <span>Hari Ini</span></div>
+          <div class="drp-panel" id="orderan-drp-panel"></div>
         </div>
       </div>
       <div id="orderan-content"><div class="loading">Memuat data...</div></div>
@@ -197,10 +248,9 @@ input[type=date]:focus { border-color:var(--accent); }
           <div class="page-title">😊 Kondisi Team</div>
           <div class="page-sub" id="mood-sub">Pantau mood CS hari ini</div>
         </div>
-        <div class="date-bar">
-          <button class="date-btn active" id="mb-today" onclick="setMoodDate('today')">Hari Ini</button>
-          <button class="date-btn" id="mb-yesterday" onclick="setMoodDate('yesterday')">Kemarin</button>
-          <input type="date" id="mood-date" onchange="loadMood()" />
+        <div class="drp-wrap">
+          <div class="drp-trigger" id="mood-drp-trigger">📅 <span>Hari Ini</span></div>
+          <div class="drp-panel" id="mood-drp-panel"></div>
         </div>
       </div>
       <div id="mood-content"><div class="loading">Memuat data...</div></div>
@@ -287,6 +337,18 @@ async function initApp() {
     const today = new Date().toISOString().slice(0,10);
     document.getElementById('orderan-date').value = today;
     document.getElementById('mood-date').value    = today;
+    // Init date range pickers
+    const today = new Date(); today.setHours(0,0,0,0);
+    window._drpOrderan = new DateRangePicker('orderan-drp', function(s, e) {
+      window._drpOrderanStart = s; window._drpOrderanEnd = e;
+      loadOrderan();
+    });
+    window._drpMood = new DateRangePicker('mood-drp', function(s, e) {
+      window._drpMoodStart = s; window._drpMoodEnd = e;
+      loadMood();
+    });
+    // Default hari ini
+    window._drpOrderan.setPreset(today, today);
     loadOrderan();
   } catch(e) {
     document.getElementById('orderan-content').innerHTML = `<div class="loading" style="color:var(--danger)">Error: ${e.message}</div>`;
@@ -305,20 +367,6 @@ function switchPage(page) {
 }
 
 // ── Date helpers ──────────────────────────────────────────────
-function setOrderanDate(preset) {
-  ['today','yesterday','all'].forEach(p => document.getElementById('ob-'+p).classList.toggle('active', p===preset));
-  const dp = document.getElementById('orderan-date');
-  if (preset === 'today')     dp.value = new Date().toISOString().slice(0,10);
-  else if (preset === 'yesterday') dp.value = new Date(Date.now()-86400000).toISOString().slice(0,10);
-  else dp.value = '';
-  loadOrderan();
-}
-function setMoodDate(preset) {
-  ['today','yesterday'].forEach(p => document.getElementById('mb-'+p).classList.toggle('active', p===preset));
-  const dp = document.getElementById('mood-date');
-  dp.value = preset === 'today' ? new Date().toISOString().slice(0,10) : new Date(Date.now()-86400000).toISOString().slice(0,10);
-  loadMood();
-}
 
 // ── Helpers ───────────────────────────────────────────────────
 function avatarColor(name) {
@@ -363,23 +411,18 @@ function donutSVG(delivered, onproses, undell, retur, total) {
 async function loadOrderan() {
   const el  = document.getElementById('orderan-content');
   el.innerHTML = '<div class="loading">Memuat data...</div>';
-  const tgl = document.getElementById('orderan-date').value;
   const teamsToShow = spvTeam === 'all' ? TEAMS : [spvTeam];
-
-  // Sync active date btn
-  const today     = new Date().toISOString().slice(0,10);
-  const yesterday = new Date(Date.now()-86400000).toISOString().slice(0,10);
-  document.getElementById('ob-today').classList.toggle('active', tgl===today);
-  document.getElementById('ob-yesterday').classList.toggle('active', tgl===yesterday);
-  document.getElementById('ob-all').classList.toggle('active', !tgl);
+  const drpS = window._drpOrderanStart;
+  const drpE = window._drpOrderanEnd || drpS;
 
   try {
     let query = sbData.from('all_orderan')
       .select('cs,team,update_crm,created_at')
       .eq('sumber','validasi')
       .in('team', teamsToShow);
-    if (tgl) {
-      query = query.gte('created_at', tgl+'T00:00:00').lte('created_at', tgl+'T23:59:59');
+    if (drpS) {
+      const iso = d => d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+      query = query.gte('created_at', iso(drpS)+'T00:00:00').lte('created_at', iso(drpE)+'T23:59:59');
     }
     const { data, error } = await query;
     if (error) throw error;
@@ -399,8 +442,9 @@ async function loadOrderan() {
       else recap[team][cs].onproses++;
     });
 
-    // Fetch mood hari ini
-    const moodDate = tgl || today;
+    // Fetch mood sesuai tanggal filter
+    const isoFn = d => d ? d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0') : new Date().toISOString().slice(0,10);
+    const moodDate = drpS ? isoFn(drpS) : new Date().toISOString().slice(0,10);
     const { data: moodData } = await sbAuth.from('mood_log').select('cs_name,mood').eq('tanggal', moodDate);
     const moodByCS = {};
     (moodData||[]).forEach(m => { moodByCS[m.cs_name] = m.mood; });
@@ -549,12 +593,10 @@ function renderCSCards(csMap, moodByCS) {
 async function loadMood() {
   const el  = document.getElementById('mood-content');
   el.innerHTML = '<div class="loading">Memuat data mood...</div>';
-  const tgl = document.getElementById('mood-date').value;
-  const today     = new Date().toISOString().slice(0,10);
-  const yesterday = new Date(Date.now()-86400000).toISOString().slice(0,10);
-  document.getElementById('mb-today').classList.toggle('active', tgl===today);
-  document.getElementById('mb-yesterday').classList.toggle('active', tgl===yesterday);
+  const drpS = window._drpMoodStart;
   const teamsToShow = spvTeam === 'all' ? TEAMS : [spvTeam];
+  const isoFn = d => d ? d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0') : new Date().toISOString().slice(0,10);
+  const tgl = isoFn(drpS);
 
   try {
     const { data: orderData } = await sbData.from('all_orderan').select('cs,team').in('team', teamsToShow).not('cs','is',null);
