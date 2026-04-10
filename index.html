@@ -76,11 +76,19 @@ let sb = null; // akan diinit setelah config di-fetch
 document.querySelector('.login-card').style.opacity = '0.5';
 document.querySelector('.login-card').style.pointerEvents = 'none';
 
+async function getConfig() {
+  const cached = sessionStorage.getItem('po_cfg');
+  if (cached) return JSON.parse(cached);
+  const res = await fetch('/api/config');
+  if (!res.ok) throw new Error('Gagal memuat konfigurasi server.');
+  const cfg = await res.json();
+  sessionStorage.setItem('po_cfg', JSON.stringify(cfg));
+  return cfg;
+}
+
 async function initApp() {
   try {
-    const res = await fetch('/api/config');
-    if (!res.ok) throw new Error('Gagal memuat konfigurasi server.');
-    const cfg = await res.json();
+    const cfg = await getConfig();
 
     // Init Supabase AUTH pakai config dari server
     sb = supabase.createClient(cfg.authUrl, cfg.authKey);
