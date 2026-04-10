@@ -598,12 +598,23 @@ async function drillTeam(team) {
   sec.innerHTML = `<div style="font-size:16px;font-weight:700;margin:1.5rem 0 1rem">🏢 Detail CS — Team ${team}</div><div class="loading">Memuat...</div>`;
   sec.scrollIntoView({ behavior:'smooth', block:'start' });
 
-  const tgl   = document.getElementById('orderan-date').value;
-  const today = new Date().toISOString().slice(0,10);
+  // Pakai drp start/end (bukan input lama)
+  const drpS = window._drpOrderanStart;
+  const drpE = window._drpOrderanEnd || drpS;
+  const iso  = d => d ? d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0') : '';
+  const moodDate = drpS ? iso(drpS) : new Date().toISOString().slice(0,10);
 
-  let query = sbData.from('all_orderan').select('cs,team,update_crm,created_at').eq('sumber','validasi').eq('team', team);
-  if (tgl) query = query.gte('created_at', tgl+'T00:00:00').lte('created_at', tgl+'T23:59:59');
-  const { data } = await query;
+  // Jalankan dua query PARALEL
+  let orderQuery = sbData.from('all_orderan')
+    .select('cs,update_crm')
+    .eq('sumber','validasi')
+    .eq('team', team);
+  if (drpS) orderQuery = orderQuery.gte('created_at', iso(drpS)+'T00:00:00').lte('created_at', iso(drpE)+'T23:59:59');
+
+  const [{ data }, { data: moodData }] = await Promise.all([
+    orderQuery,
+    sbAuth.from('mood_log').select('cs_name,mood').eq('tanggal', moodDate)
+  ]);
 
   const recap = {};
   (data||[]).forEach(r => {
@@ -617,8 +628,6 @@ async function drillTeam(team) {
     else recap[cs].onproses++;
   });
 
-  const moodDate = tgl || today;
-  const { data: moodData } = await sbAuth.from('mood_log').select('cs_name,mood').eq('tanggal', moodDate);
   const moodByCS = {};
   (moodData||[]).forEach(m => { moodByCS[m.cs_name] = m.mood; });
 
@@ -847,14 +856,16 @@ async function openCSModal(csName, stats, mood) {
   tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:2rem;color:var(--muted)">Memuat data...</td></tr>';
 
   try {
-    const tgl = document.getElementById('orderan-date').value;
+    const _s = window._drpOrderanStart;
+    const _e = window._drpOrderanEnd || _s;
+    const _iso = d => d ? d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0') : '';
     let query = sbData.from('all_orderan')
       .select('created_at,nama,hp,pembayaran,kabupaten,update_crm,resi')
       .eq('sumber','validasi')
       .ilike('cs', '%' + name + '%')
       .order('created_at', { ascending: false })
       .limit(200);
-    if (tgl) query = query.gte('created_at', tgl+'T00:00:00').lte('created_at', tgl+'T23:59:59');
+    if (_s) query = query.gte('created_at', _iso(_s)+'T00:00:00').lte('created_at', _iso(_e)+'T23:59:59');
 
     const { data, error } = await query;
     if (error) throw error;
