@@ -5,16 +5,6 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Progres Orderan — Login</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script>
-// ════════════════════════════════════════════════
-//  KONFIGURASI — GANTI SESUAI PROJECT SUPABASE ANDA
-// ════════════════════════════════════════════════
-const CONFIG = {
-  // Supabase AUTH (project baru untuk login CS)
-  AUTH_URL : 'GANTI_DENGAN_SUPABASE_AUTH_URL',
-  AUTH_KEY : 'GANTI_DENGAN_SUPABASE_AUTH_ANON_KEY',
-};
-</script>
 <style>
   * { margin:0; padding:0; box-sizing:border-box; }
   body { font-family:'Inter',system-ui,sans-serif; background:#0f172a; min-height:100vh; display:flex; align-items:center; justify-content:center; }
@@ -79,36 +69,59 @@ const CONFIG = {
   </div>
 </div>
 <script>
-// Supabase AUTH — untuk login/register CS
-const sb = supabase.createClient(CONFIG.AUTH_URL, CONFIG.AUTH_KEY);
 const DOMAIN = '@progresorderan.com';
+let sb = null; // akan diinit setelah config di-fetch
+
+// ── Tampilkan loading saat fetch config ───────────────────────────────────────
+document.querySelector('.login-card').style.opacity = '0.5';
+document.querySelector('.login-card').style.pointerEvents = 'none';
+
+async function initApp() {
+  try {
+    const res = await fetch('/api/config');
+    if (!res.ok) throw new Error('Gagal memuat konfigurasi server.');
+    const cfg = await res.json();
+
+    // Init Supabase AUTH pakai config dari server
+    sb = supabase.createClient(cfg.authUrl, cfg.authKey);
+
+    // Cek kalau sudah login sebelumnya
+    const { data } = await sb.auth.getSession();
+    if (data.session) {
+      const meta = data.session.user?.user_metadata || {};
+      sessionStorage.setItem('po_cs_name', meta.cs_name || '');
+      sessionStorage.setItem('po_username', meta.username || '');
+      sessionStorage.setItem('po_auth_token', data.session.access_token || '');
+      window.location.href = '/app.html';
+      return;
+    }
+  } catch(e) {
+    document.getElementById('error-msg').textContent = e.message;
+    document.getElementById('error-msg').style.display = 'block';
+  }
+  // Selesai loading — aktifkan form
+  document.querySelector('.login-card').style.opacity = '1';
+  document.querySelector('.login-card').style.pointerEvents = 'auto';
+}
+
+initApp();
 
 async function login() {
+  if (!sb) return;
   const username = document.getElementById('username').value.trim().toLowerCase();
   const pass     = document.getElementById('password').value;
   const errEl    = document.getElementById('error-msg');
   errEl.style.display = 'none';
   if (!username) { errEl.textContent = 'Username tidak boleh kosong'; errEl.style.display='block'; return; }
-  // Convert username to internal email
   const email = username.includes('@') ? username : username + DOMAIN;
   const { data: signInData, error } = await sb.auth.signInWithPassword({ email, password: pass });
   if (error) { errEl.textContent = 'Username atau password salah'; errEl.style.display = 'block'; return; }
-  // Simpan cs_name di sessionStorage agar app.html bisa pakai
   const meta = signInData.user?.user_metadata || {};
   sessionStorage.setItem('po_cs_name', meta.cs_name || '');
   sessionStorage.setItem('po_username', meta.username || username);
   sessionStorage.setItem('po_auth_token', signInData.session?.access_token || '');
   window.location.href = '/app.html';
 }
-sb.auth.getSession().then(({ data }) => {
-  if (data.session) {
-    const meta = data.session.user?.user_metadata || {};
-    sessionStorage.setItem('po_cs_name', meta.cs_name || '');
-    sessionStorage.setItem('po_username', meta.username || '');
-    sessionStorage.setItem('po_auth_token', data.session.access_token || '');
-    window.location.href = '/app.html';
-  }
-});
 
 function toggleForm() {
   const reg      = document.getElementById('register-form');
@@ -119,6 +132,7 @@ function toggleForm() {
 }
 
 async function register() {
+  if (!sb) return;
   const username = document.getElementById('reg-username').value.trim().toLowerCase();
   const namaRaw  = document.getElementById('reg-nama').value.trim();
   const capitalize = s => s.replace(/\b\w/g, c => c.toUpperCase());
@@ -129,22 +143,17 @@ async function register() {
   errEl.style.display = 'none';
 
   if (!username) { errEl.textContent = 'Username wajib diisi'; errEl.style.display='block'; return; }
-  if (!nama) { errEl.textContent = 'Nama lengkap wajib diisi'; errEl.style.display='block'; return; }
+  if (!nama)     { errEl.textContent = 'Nama lengkap wajib diisi'; errEl.style.display='block'; return; }
   if (pass.length < 6) { errEl.textContent = 'Password minimal 6 karakter'; errEl.style.display='block'; return; }
-  if (pass !== pass2) { errEl.textContent = 'Password tidak sama'; errEl.style.display='block'; return; }
+  if (pass !== pass2)  { errEl.textContent = 'Password tidak sama'; errEl.style.display='block'; return; }
 
   const email = username + DOMAIN;
-  const { data, error } = await sb.auth.signUp({
-    email,
-    password: pass,
-    options: {
-      data: { role: 'cs', cs_name: nama, username }
-    }
+  const { error } = await sb.auth.signUp({
+    email, password: pass,
+    options: { data: { role: 'cs', cs_name: nama, username } }
   });
-
   if (error) { errEl.textContent = error.message; errEl.style.display='block'; return; }
-  
-  // Auto login after register
+
   const { data: loginData, error: loginErr } = await sb.auth.signInWithPassword({ email, password: pass });
   if (loginErr) {
     errEl.textContent = 'Akun dibuat! Silakan login.';
