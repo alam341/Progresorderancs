@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Progres Orderan — Login</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+// ════════════════════════════════════════════════
+//  KONFIGURASI — GANTI SESUAI PROJECT SUPABASE ANDA
+// ════════════════════════════════════════════════
+const CONFIG = {
+  // Supabase AUTH (project baru untuk login CS)
+  AUTH_URL : 'GANTI_DENGAN_SUPABASE_AUTH_URL',
+  AUTH_KEY : 'GANTI_DENGAN_SUPABASE_AUTH_ANON_KEY',
+};
+</script>
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { font-family:'Inter',system-ui,sans-serif; background:#0f172a; min-height:100vh; display:flex; align-items:center; justify-content:center; }
+  .login-card { background:#1e293b; border:1px solid #334155; border-radius:20px; padding:2.5rem; width:100%; max-width:400px; }
+  .logo { font-size:28px; font-weight:800; color:#fff; margin-bottom:0.25rem; }
+  .logo span { color:#6366f1; }
+  .sub { font-size:13px; color:#64748b; margin-bottom:2rem; }
+  label { display:block; font-size:12px; color:#94a3b8; margin-bottom:6px; }
+  input { width:100%; padding:10px 14px; background:#0f172a; border:1px solid #334155; border-radius:10px; color:#fff; font-size:14px; outline:none; }
+  input:focus { border-color:#6366f1; }
+  .btn { width:100%; padding:12px; background:#6366f1; color:#fff; border:none; border-radius:10px; font-size:14px; font-weight:600; cursor:pointer; margin-top:1.25rem; }
+  .btn:hover { background:#4f46e5; }
+  .error { color:#ef4444; font-size:12px; margin-top:0.5rem; display:none; }
+  .field { margin-bottom:1rem; }
+</style>
+</head>
+<body>
+<div class="login-card">
+  <div class="logo">Progres<span>Orderan</span></div>
+  <div class="sub">Monitor status pengiriman orderan</div>
+  <div id="login-section">
+    <div class="field">
+      <label>Username</label>
+      <input type="text" id="username" placeholder="contoh: ani" autocomplete="username" />
+    </div>
+    <div class="field">
+      <label>Password</label>
+      <input type="password" id="password" placeholder="••••••••" onkeydown="if(event.key==='Enter')login()" />
+    </div>
+    <div class="error" id="error-msg"></div>
+    <button class="btn" onclick="login()">Masuk</button>
+    <div style="text-align:center;margin-top:1rem;font-size:12px;color:#64748b">
+      Belum punya akun? <span onclick="toggleForm()" style="color:#6366f1;cursor:pointer;font-weight:600">Daftar di sini</span>
+    </div>
+  </div>
+
+  <!-- Register form -->
+  <div id="register-form" style="display:none;margin-top:1.5rem;border-top:1px solid #334155;padding-top:1.5rem">
+    <div style="font-size:14px;font-weight:700;color:#fff;margin-bottom:1rem">Daftar Akun Baru</div>
+    <div class="field">
+      <label>Username</label>
+      <input type="text" id="reg-username" placeholder="contoh: budi" />
+    </div>
+    <div class="field">
+      <label>Nama CS</label>
+      <input type="text" id="reg-nama" placeholder="contoh: Ambar" />
+      <div style="font-size:11px;color:#64748b;margin-top:4px">Sistem otomatis tambahkan "Pengirim " di depan nama</div>
+    </div>
+    <div class="field">
+      <label>Password</label>
+      <input type="password" id="reg-password" placeholder="min 6 karakter" />
+    </div>
+    <div class="field">
+      <label>Konfirmasi Password</label>
+      <input type="password" id="reg-password2" placeholder="ulangi password" onkeydown="if(event.key==='Enter')register()" />
+    </div>
+    <div class="error" id="reg-error"></div>
+    <button class="btn" onclick="register()">Daftar</button>
+    <div style="text-align:center;margin-top:0.75rem;font-size:12px;color:#64748b">
+      Sudah punya akun? <span onclick="toggleForm()" style="color:#6366f1;cursor:pointer;font-weight:600">Masuk</span>
+    </div>
+  </div>
+</div>
+<script>
+// Supabase AUTH — untuk login/register CS
+const sb = supabase.createClient(CONFIG.AUTH_URL, CONFIG.AUTH_KEY);
+const DOMAIN = '@progresorderan.com';
+
+async function login() {
+  const username = document.getElementById('username').value.trim().toLowerCase();
+  const pass     = document.getElementById('password').value;
+  const errEl    = document.getElementById('error-msg');
+  errEl.style.display = 'none';
+  if (!username) { errEl.textContent = 'Username tidak boleh kosong'; errEl.style.display='block'; return; }
+  // Convert username to internal email
+  const email = username.includes('@') ? username : username + DOMAIN;
+  const { data: signInData, error } = await sb.auth.signInWithPassword({ email, password: pass });
+  if (error) { errEl.textContent = 'Username atau password salah'; errEl.style.display = 'block'; return; }
+  // Simpan cs_name di sessionStorage agar app.html bisa pakai
+  const meta = signInData.user?.user_metadata || {};
+  sessionStorage.setItem('po_cs_name', meta.cs_name || '');
+  sessionStorage.setItem('po_username', meta.username || username);
+  sessionStorage.setItem('po_auth_token', signInData.session?.access_token || '');
+  window.location.href = '/app.html';
+}
+sb.auth.getSession().then(({ data }) => {
+  if (data.session) {
+    const meta = data.session.user?.user_metadata || {};
+    sessionStorage.setItem('po_cs_name', meta.cs_name || '');
+    sessionStorage.setItem('po_username', meta.username || '');
+    sessionStorage.setItem('po_auth_token', data.session.access_token || '');
+    window.location.href = '/app.html';
+  }
+});
+
+function toggleForm() {
+  const reg      = document.getElementById('register-form');
+  const loginSec = document.getElementById('login-section');
+  const isReg    = reg.style.display === 'none';
+  reg.style.display       = isReg ? 'block' : 'none';
+  loginSec.style.display  = isReg ? 'none' : 'block';
+}
+
+async function register() {
+  const username = document.getElementById('reg-username').value.trim().toLowerCase();
+  const namaRaw  = document.getElementById('reg-nama').value.trim();
+  const capitalize = s => s.replace(/\b\w/g, c => c.toUpperCase());
+  const nama     = namaRaw.toLowerCase().startsWith('pengirim ') ? capitalize(namaRaw) : 'Pengirim ' + capitalize(namaRaw);
+  const pass     = document.getElementById('reg-password').value;
+  const pass2    = document.getElementById('reg-password2').value;
+  const errEl    = document.getElementById('reg-error');
+  errEl.style.display = 'none';
+
+  if (!username) { errEl.textContent = 'Username wajib diisi'; errEl.style.display='block'; return; }
+  if (!nama) { errEl.textContent = 'Nama lengkap wajib diisi'; errEl.style.display='block'; return; }
+  if (pass.length < 6) { errEl.textContent = 'Password minimal 6 karakter'; errEl.style.display='block'; return; }
+  if (pass !== pass2) { errEl.textContent = 'Password tidak sama'; errEl.style.display='block'; return; }
+
+  const email = username + DOMAIN;
+  const { data, error } = await sb.auth.signUp({
+    email,
+    password: pass,
+    options: {
+      data: { role: 'cs', cs_name: nama, username }
+    }
+  });
+
+  if (error) { errEl.textContent = error.message; errEl.style.display='block'; return; }
+  
+  // Auto login after register
+  const { data: loginData, error: loginErr } = await sb.auth.signInWithPassword({ email, password: pass });
+  if (loginErr) {
+    errEl.textContent = 'Akun dibuat! Silakan login.';
+    errEl.style.color = '#22c55e';
+    errEl.style.display = 'block';
+    toggleForm();
+  } else {
+    const meta = loginData.user?.user_metadata || {};
+    sessionStorage.setItem('po_cs_name', meta.cs_name || nama);
+    sessionStorage.setItem('po_username', meta.username || username);
+    sessionStorage.setItem('po_auth_token', loginData.session?.access_token || '');
+    window.location.href = '/app.html';
+  }
+}
+</script>
+</body>
+</html>
