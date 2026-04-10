@@ -39,13 +39,35 @@ body { font-family:'Plus Jakarta Sans',system-ui,sans-serif; background:var(--bg
 .layout { display:flex; flex:1; overflow:hidden; }
 
 /* SIDEBAR */
-.sidebar { width:220px; background:var(--bg2); border-right:1px solid var(--border); display:flex; flex-direction:column; padding:1.25rem 0; flex-shrink:0; position:sticky; top:58px; height:calc(100vh - 58px); overflow-y:auto; }
-.sidebar-label { font-size:10px; font-weight:700; color:var(--muted); text-transform:uppercase; letter-spacing:0.8px; padding:0 1.25rem; margin-bottom:6px; margin-top:1rem; }
-.sidebar-label:first-child { margin-top:0; }
-.nav-item { display:flex; align-items:center; gap:10px; padding:10px 1.25rem; font-size:13px; font-weight:500; color:var(--muted2); cursor:pointer; transition:all 0.15s; border-left:3px solid transparent; text-decoration:none; }
+.sidebar {
+  width:56px; background:var(--bg2); border-right:1px solid var(--border);
+  display:flex; flex-direction:column; padding:0.75rem 0;
+  flex-shrink:0; position:sticky; top:58px;
+  height:calc(100vh - 58px); overflow:hidden;
+  transition:width 0.2s ease; z-index:80;
+}
+.sidebar:hover, .sidebar.expanded { width:220px; }
+.sidebar-label {
+  font-size:10px; font-weight:700; color:var(--muted);
+  text-transform:uppercase; letter-spacing:0.8px;
+  padding:0 1rem; margin-bottom:4px; margin-top:1rem;
+  white-space:nowrap; overflow:hidden; opacity:0;
+  transition:opacity 0.15s;
+}
+.sidebar:hover .sidebar-label, .sidebar.expanded .sidebar-label { opacity:1; }
+.sidebar-label:first-child { margin-top:0.25rem; }
+.nav-item {
+  display:flex; align-items:center; gap:10px;
+  padding:10px 1rem; font-size:13px; font-weight:500;
+  color:var(--muted2); cursor:pointer; transition:all 0.15s;
+  border-left:3px solid transparent; text-decoration:none;
+  white-space:nowrap; overflow:hidden;
+}
 .nav-item:hover { background:rgba(168,85,247,0.06); color:var(--text); }
 .nav-item.active { background:rgba(168,85,247,0.1); color:#c084fc; border-left-color:var(--accent); font-weight:600; }
-.nav-icon { font-size:16px; flex-shrink:0; }
+.nav-icon { font-size:18px; flex-shrink:0; min-width:24px; text-align:center; }
+.nav-label { opacity:0; transition:opacity 0.15s; }
+.sidebar:hover .nav-label, .sidebar.expanded .nav-label { opacity:1; }
 
 /* SIDEBAR TOGGLE */
 .sidebar-toggle { display:none; background:none; border:1px solid var(--border); color:var(--muted2); padding:5px 10px; border-radius:8px; cursor:pointer; font-size:16px; }
@@ -100,37 +122,37 @@ input[type=date]:focus { border-color:var(--accent); }
 
 /* CS CARDS (SPV TEAM) */
 .cs-cards-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(220px,1fr)); gap:12px; }
-.cs-card { background:var(--bg2); border:1px solid var(--border); border-radius:16px; padding:1.25rem; transition:all 0.2s; }
-.cs-card:hover { border-color:var(--border2); transform:translateY(-2px); box-shadow:0 6px 20px rgba(0,0,0,0.25); }
-.cs-card-top { display:flex; align-items:center; gap:10px; margin-bottom:1rem; }
-.cs-avatar { width:42px; height:42px; border-radius:12px; display:flex; align-items:center; justify-content:center; font-size:14px; font-weight:800; color:#fff; flex-shrink:0; }
+.cs-card {
+  background:var(--bg2); border:1px solid var(--border); border-radius:16px;
+  padding:1rem; transition:all 0.2s; cursor:pointer;
+}
+.cs-card:hover { border-color:var(--accent); transform:translateY(-2px); box-shadow:0 6px 20px rgba(168,85,247,0.15); }
+.cs-card-top { display:flex; align-items:center; gap:10px; margin-bottom:0.75rem; }
+.cs-avatar { width:40px; height:40px; border-radius:12px; display:flex; align-items:center; justify-content:center; font-size:13px; font-weight:800; color:#fff; flex-shrink:0; }
 .cs-card-info { flex:1; min-width:0; }
-.cs-card-name { font-size:14px; font-weight:700; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-.cs-card-mood { display:flex; align-items:center; gap:5px; margin-top:3px; font-size:11px; color:var(--muted); }
-.cs-stats { display:grid; grid-template-columns:repeat(5,1fr); gap:4px; }
-.cs-stat { background:var(--bg3); border-radius:8px; padding:7px 4px; text-align:center; }
-.cs-stat-val { font-size:14px; font-weight:800; font-family:'JetBrains Mono',monospace; line-height:1; }
-.cs-stat-label { font-size:9px; color:var(--muted); margin-top:3px; font-weight:600; text-transform:uppercase; letter-spacing:0.3px; }
+.cs-card-name { font-size:13px; font-weight:700; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.cs-card-mood { display:flex; align-items:center; gap:4px; margin-top:2px; font-size:11px; color:var(--muted); }
+.cs-stats { display:grid; grid-template-columns:repeat(5,1fr); gap:3px; }
+.cs-stat { background:var(--bg3); border-radius:7px; padding:6px 2px; text-align:center; }
+.cs-stat-val { font-size:13px; font-weight:800; font-family:'JetBrains Mono',monospace; line-height:1; }
+.cs-stat-label { font-size:8px; color:var(--muted); margin-top:2px; font-weight:600; text-transform:uppercase; letter-spacing:0.2px; }
 
 .loading { text-align:center; padding:3rem; color:var(--muted); font-size:13px; }
 
 @media(max-width:768px) {
-  .sidebar { position:fixed; top:58px; left:-220px; z-index:90; transition:left 0.25s; height:calc(100vh - 58px); }
-  .sidebar.open { left:0; box-shadow:4px 0 24px rgba(0,0,0,0.5); }
-  .sidebar-toggle { display:block; }
+  .sidebar { width:48px; }
+  .sidebar:hover, .sidebar.expanded { width:200px; }
   .main { padding:1rem; }
   .team-cards-grid { grid-template-columns:1fr; }
-  .cs-cards-grid { grid-template-columns:repeat(auto-fill,minmax(160px,1fr)); }
-  .page-header { flex-direction:column; }
+  .cs-cards-grid { grid-template-columns:repeat(auto-fill,minmax(150px,1fr)); }
+  .page-header { flex-direction:column; gap:8px; }
+  .sidebar-toggle { display:none; }
 }
 </style>
 </head>
 <body>
 <div class="header">
-  <div style="display:flex;align-items:center;gap:10px">
-    <button class="sidebar-toggle" onclick="toggleSidebar()">☰</button>
-    <div class="logo">Progres<span>Orderan</span> <span style="font-size:12px;color:var(--muted);font-weight:500">SPV</span></div>
-  </div>
+  <div class="logo">Progres<span>Orderan</span> <span style="font-size:12px;color:var(--muted);font-weight:500">SPV</span></div>
   <div class="header-right">
     <div class="badge-spv" id="spv-badge">👑 SPV</div>
     <button class="btn-theme" onclick="toggleTheme()"><span id="theme-icon">🌙</span><span id="theme-label" class="theme-label-txt">Gelap</span></button>
@@ -138,16 +160,14 @@ input[type=date]:focus { border-color:var(--accent); }
   </div>
 </div>
 
-<div class="sidebar-overlay" id="sidebar-overlay" onclick="toggleSidebar()"></div>
-
 <div class="layout">
   <div class="sidebar" id="sidebar">
     <div class="sidebar-label">Menu</div>
     <div class="nav-item active" id="nav-orderan" onclick="switchPage('orderan')">
-      <span class="nav-icon">📦</span><span>Progres Orderan</span>
+      <span class="nav-icon">📦</span><span class="nav-label">Progres Orderan</span>
     </div>
     <div class="nav-item" id="nav-mood" onclick="switchPage('mood')">
-      <span class="nav-icon">😊</span><span>Kondisi Team</span>
+      <span class="nav-icon">😊</span><span class="nav-label">Kondisi Team</span>
     </div>
   </div>
 
@@ -275,17 +295,11 @@ async function initApp() {
 initApp();
 
 // ── Sidebar ───────────────────────────────────────────────────
-function toggleSidebar() {
-  document.getElementById('sidebar').classList.toggle('open');
-  document.getElementById('sidebar-overlay').classList.toggle('show');
-}
 function switchPage(page) {
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
   document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
   document.getElementById('page-' + page).classList.add('active');
   document.getElementById('nav-' + page).classList.add('active');
-  document.getElementById('sidebar').classList.remove('open');
-  document.getElementById('sidebar-overlay').classList.remove('show');
   if (page === 'orderan') loadOrderan();
   if (page === 'mood')    loadMood();
 }
@@ -496,7 +510,8 @@ function renderCSCards(csMap, moodByCS) {
     const moodEmoji = mood ? (MOODS[mood]||'😐') : '❓';
     const color = avatarColor(name);
     const ini   = initials(cs).toUpperCase();
-    return `<div class="cs-card">
+    const moodStr = mood || null;
+  return `<div class="cs-card" onclick="openCSModal('${cs}', ${JSON.stringify(d)}, ${JSON.stringify(moodStr)})">
       <div class="cs-card-top">
         <div class="cs-avatar" style="background:${color}">${ini}</div>
         <div class="cs-card-info">
@@ -606,6 +621,140 @@ async function logout() {
   if (sbAuth) await sbAuth.auth.signOut();
   window.location.href = '/';
 }
+</script>
+
+<!-- MODAL DETAIL CS -->
+<div id="cs-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:200;align-items:center;justify-content:center;padding:1rem">
+  <div style="background:var(--bg2);border:1px solid var(--border);border-radius:20px;width:100%;max-width:700px;max-height:85vh;display:flex;flex-direction:column;box-shadow:0 32px 80px rgba(0,0,0,0.5)">
+    <!-- Modal header -->
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:1.25rem 1.5rem;border-bottom:1px solid var(--border);flex-shrink:0">
+      <div style="display:flex;align-items:center;gap:12px">
+        <div id="modal-avatar" style="width:44px;height:44px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:800;color:#fff;flex-shrink:0"></div>
+        <div>
+          <div id="modal-cs-name" style="font-size:16px;font-weight:700"></div>
+          <div id="modal-cs-mood" style="font-size:12px;color:var(--muted);margin-top:2px"></div>
+        </div>
+      </div>
+      <button onclick="document.getElementById('cs-modal').style.display='none'" style="background:none;border:1px solid var(--border);color:var(--muted);width:32px;height:32px;border-radius:8px;cursor:pointer;font-size:16px;display:flex;align-items:center;justify-content:center">✕</button>
+    </div>
+    <!-- Stat row -->
+    <div id="modal-stats" style="display:grid;grid-template-columns:repeat(5,1fr);gap:8px;padding:1rem 1.5rem;flex-shrink:0;border-bottom:1px solid var(--border)"></div>
+    <!-- Table -->
+    <div style="overflow-y:auto;flex:1">
+      <table style="width:100%;border-collapse:collapse;font-size:12px">
+        <thead>
+          <tr style="background:var(--bg3);position:sticky;top:0">
+            <th style="padding:10px 14px;text-align:left;font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.6px;border-bottom:1px solid var(--border)">Tanggal</th>
+            <th style="padding:10px 14px;text-align:left;font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.6px;border-bottom:1px solid var(--border)">Nama</th>
+            <th style="padding:10px 14px;text-align:left;font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.6px;border-bottom:1px solid var(--border)">HP</th>
+            <th style="padding:10px 14px;text-align:left;font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.6px;border-bottom:1px solid var(--border)">Ekspedisi</th>
+            <th style="padding:10px 14px;text-align:left;font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.6px;border-bottom:1px solid var(--border)">Kabupaten</th>
+            <th style="padding:10px 14px;text-align:left;font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.6px;border-bottom:1px solid var(--border)">Status</th>
+          </tr>
+        </thead>
+        <tbody id="modal-tbody">
+          <tr><td colspan="6" style="text-align:center;padding:2rem;color:var(--muted)">Memuat...</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+<style>
+@keyframes modalIn { from{opacity:0;transform:scale(0.95)} to{opacity:1;transform:scale(1)} }
+#cs-modal > div { animation: modalIn 0.2s ease; }
+</style>
+<script>
+// ── MODAL DETAIL CS ───────────────────────────────────────────
+function statusBadge(crm) {
+  const c = (crm||'').toUpperCase();
+  if (c === 'DELIVERED')       return `<span style="background:rgba(16,185,129,0.1);color:#10b981;padding:3px 8px;border-radius:6px;font-size:10px;font-weight:700;font-family:'JetBrains Mono',monospace">DELIVERED</span>`;
+  if (c === 'RETUR')           return `<span style="background:rgba(244,63,94,0.1);color:#f43f5e;padding:3px 8px;border-radius:6px;font-size:10px;font-weight:700;font-family:'JetBrains Mono',monospace">RETUR</span>`;
+  if (c.startsWith('UNDELL'))  return `<span style="background:rgba(245,158,11,0.1);color:#f59e0b;padding:3px 8px;border-radius:6px;font-size:10px;font-weight:700;font-family:'JetBrains Mono',monospace">UNDELL</span>`;
+  return `<span style="background:rgba(59,130,246,0.1);color:#3b82f6;padding:3px 8px;border-radius:6px;font-size:10px;font-weight:700;font-family:'JetBrains Mono',monospace">ON PROSES</span>`;
+}
+
+function extractEks(pembayaran) {
+  const s = (pembayaran||'').toUpperCase();
+  if (s.includes('SICEPAT')) return 'SiCepat';
+  if (s.includes('ANTERAJA')) return 'Anteraja';
+  if (s.includes('NINJA')) return 'Ninja';
+  if (s.includes('LION')) return 'Lion';
+  if (s.includes('SAP')) return 'SAP';
+  if (s.includes('IDX') || s.includes('IDEXPRESS')) return 'IDX';
+  if (s.includes('JNE')) return 'JNE';
+  if (s.includes('JNT') || s.includes('J&T')) return 'JNT';
+  if (s.includes('POS')) return 'POS';
+  return '—';
+}
+
+async function openCSModal(csName, stats, mood) {
+  const modal = document.getElementById('cs-modal');
+  modal.style.display = 'flex';
+
+  // Avatar
+  const name  = shortName(csName);
+  const color = avatarColor(name);
+  const ini   = initials(csName).toUpperCase();
+  document.getElementById('modal-avatar').style.background = color;
+  document.getElementById('modal-avatar').textContent = ini;
+  document.getElementById('modal-cs-name').textContent = name;
+  document.getElementById('modal-cs-mood').textContent = mood ? (MOODS[mood]||'😐') + ' ' + mood : '❓ Belum isi mood';
+
+  // Stats
+  document.getElementById('modal-stats').innerHTML = [
+    ['Total',   stats.total,     'var(--text)'],
+    ['On Proses', stats.onproses,'var(--info)'],
+    ['Delivered', stats.delivered,'var(--success)'],
+    ['Undell',  stats.undell,    stats.undell>0 ? 'var(--warn)' : 'var(--muted)'],
+    ['RTS',     stats.retur,     stats.retur>0  ? 'var(--danger)': 'var(--muted)'],
+  ].map(([l,v,c]) => `
+    <div style="background:var(--bg3);border-radius:10px;padding:10px;text-align:center">
+      <div style="font-size:20px;font-weight:800;color:${c};font-family:'JetBrains Mono',monospace">${v}</div>
+      <div style="font-size:10px;color:var(--muted);margin-top:3px;font-weight:600;text-transform:uppercase">${l}</div>
+    </div>`).join('');
+
+  // Load data orderan CS
+  const tbody = document.getElementById('modal-tbody');
+  tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:2rem;color:var(--muted)">Memuat data...</td></tr>';
+
+  try {
+    const tgl = document.getElementById('orderan-date').value;
+    let query = sbData.from('all_orderan')
+      .select('created_at,nama,hp,pembayaran,kabupaten,update_crm,resi')
+      .eq('sumber','validasi')
+      .ilike('cs', '%' + name + '%')
+      .order('created_at', { ascending: false })
+      .limit(200);
+    if (tgl) query = query.gte('created_at', tgl+'T00:00:00').lte('created_at', tgl+'T23:59:59');
+
+    const { data, error } = await query;
+    if (error) throw error;
+
+    if (!data?.length) {
+      tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:2rem;color:var(--muted)">Tidak ada data</td></tr>';
+      return;
+    }
+
+    tbody.innerHTML = data.map(r => {
+      const tglStr = r.created_at ? new Date(r.created_at).toLocaleDateString('id-ID',{day:'2-digit',month:'short'}) : '—';
+      return `<tr style="border-bottom:1px solid var(--border);transition:background 0.1s" onmouseover="this.style.background='rgba(168,85,247,0.04)'" onmouseout="this.style.background=''">
+        <td style="padding:9px 14px;font-size:11px;color:var(--muted);font-family:'JetBrains Mono',monospace">${tglStr}</td>
+        <td style="padding:9px 14px;font-weight:500">${r.nama||'—'}</td>
+        <td style="padding:9px 14px;font-family:'JetBrains Mono',monospace;color:var(--muted2)">${r.hp||'—'}</td>
+        <td style="padding:9px 14px;font-weight:600">${extractEks(r.pembayaran)}</td>
+        <td style="padding:9px 14px;color:var(--muted2);font-size:11px">${r.kabupaten||'—'}</td>
+        <td style="padding:9px 14px">${statusBadge(r.update_crm)}</td>
+      </tr>`;
+    }).join('');
+  } catch(e) {
+    tbody.innerHTML = `<tr><td colspan="6" style="text-align:center;padding:2rem;color:var(--danger)">Error: ${e.message}</td></tr>`;
+  }
+}
+
+// Close modal on backdrop click
+document.getElementById('cs-modal').addEventListener('click', function(e) {
+  if (e.target === this) this.style.display = 'none';
+});
 </script>
 </body>
 </html>
