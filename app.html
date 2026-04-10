@@ -1,0 +1,1830 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Progres Orderan</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+:root {
+  --bg:#0f172a; --bg2:#1e293b; --border:#334155; --border2:#475569;
+  --text:#f1f5f9; --muted:#94a3b8; --accent:#6366f1; --accent2:#4f46e5;
+  --success:#22c55e; --danger:#ef4444; --warn:#f59e0b;
+  --success-bg:#052e16; --danger-bg:#450a0a; --warn-bg:#431407;
+}
+[data-theme="light"] {
+  --bg:#f8fafc; --bg2:#ffffff; --border:#e2e8f0; --border2:#cbd5e1;
+  --text:#0f172a; --muted:#64748b; --accent:#6366f1; --accent2:#4f46e5;
+  --success:#16a34a; --danger:#dc2626; --warn:#d97706;
+  --success-bg:#f0fdf4; --danger-bg:#fef2f2; --warn-bg:#fffbeb;
+}
+[data-theme="light"] {
+  --bg:#f8fafc; --bg2:#ffffff; --border:#e2e8f0; --border2:#cbd5e1;
+  --text:#0f172a; --muted:#64748b; --accent:#6366f1; --accent2:#4f46e5;
+  --success:#16a34a; --danger:#dc2626; --warn:#d97706;
+  --success-bg:#f0fdf4; --danger-bg:#fef2f2; --warn-bg:#fffbeb;
+}
+* { margin:0; padding:0; box-sizing:border-box; }
+body { font-family:'Inter',system-ui,sans-serif; background:var(--bg); color:var(--text); min-height:100vh; display:flex; flex-direction:column; }
+
+/* Header */
+.header { background:var(--bg2); border-bottom:1px solid var(--border); padding:0 1.5rem; height:56px; display:flex; align-items:center; justify-content:space-between; position:sticky; top:0; z-index:50; }
+.logo { font-size:18px; font-weight:800; color:#fff; }
+.logo span { color:var(--accent); }
+.user-info { display:flex; align-items:center; gap:10px; font-size:13px; color:var(--muted); }
+.btn-logout { background:none; border:1px solid var(--border); color:var(--muted); padding:5px 12px; border-radius:8px; cursor:pointer; font-size:12px; }
+.btn-logout:hover { border-color:var(--danger); color:var(--danger); }
+
+/* Nav tabs */
+.nav-tabs { background:var(--bg2); border-bottom:1px solid var(--border); padding:0 1.5rem; display:flex; gap:4px; }
+.nav-tab { padding:12px 16px; font-size:13px; font-weight:500; color:var(--muted); cursor:pointer; border-bottom:2px solid transparent; transition:all 0.15s; white-space:nowrap; }
+.nav-tab:hover { color:var(--text); }
+.nav-tab.active { color:var(--accent); border-bottom-color:var(--accent); }
+
+/* Main */
+.main { flex:1; padding:1.5rem; max-width:1400px; width:100%; margin:0 auto; }
+
+/* Cards */
+.card { background:var(--bg2); border:1px solid var(--border); border-radius:16px; padding:1.25rem; }
+.card-title { font-size:14px; font-weight:700; margin-bottom:0.5rem; }
+.card-desc { font-size:12px; color:var(--muted); }
+
+/* Summary cards */
+.summary-grid { display:grid; grid-template-columns:repeat(5,1fr); gap:10px; margin-bottom:1.25rem; }
+.sum-card { background:var(--bg2); border:1px solid var(--border); border-radius:12px; padding:14px 16px; cursor:pointer; transition:border-color 0.15s; }
+.sum-card:hover { border-color:var(--accent); }
+.sum-label { font-size:11px; color:var(--muted); font-family:monospace; text-transform:uppercase; margin-bottom:6px; }
+.sum-value { font-size:24px; font-weight:800; }
+.sum-card { border:none !important; border-radius:14px !important; }
+
+.sum-card.c-total     { background:linear-gradient(135deg,#4338ca 0%,#312e81 100%); }
+.sum-card.c-onproses  { background:linear-gradient(135deg,#0284c7 0%,#0c4a6e 100%); }
+.sum-card.c-undell    { background:linear-gradient(135deg,#ea580c 0%,#7c2d12 100%); }
+.sum-card.c-delivered { background:linear-gradient(135deg,#16a34a 0%,#14532d 100%); }
+.sum-card.c-retur     { background:linear-gradient(135deg,#dc2626 0%,#7f1d1d 100%); }
+
+.sum-card .sum-label { color:rgba(255,255,255,0.75) !important; font-size:11px; font-weight:500; letter-spacing:0.5px; text-transform:uppercase; }
+.sum-card .sum-value { color:#fff !important; font-size:26px; font-weight:800; text-shadow:0 1px 4px rgba(0,0,0,0.3); margin-top:4px; }
+.sum-card:hover { opacity:0.9; transform:translateY(-1px); transition:all 0.15s; }
+
+/* Buttons */
+.btn-primary { background:var(--accent); color:#fff; border:none; padding:8px 16px; border-radius:10px; font-size:13px; font-weight:600; cursor:pointer; display:inline-flex; align-items:center; gap:6px; }
+.btn-primary:hover { background:var(--accent2); }
+.btn-primary:disabled { opacity:0.5; cursor:not-allowed; }
+.btn-secondary { background:var(--bg2); color:var(--text); border:1px solid var(--border); padding:8px 16px; border-radius:10px; font-size:13px; font-weight:500; cursor:pointer; }
+.btn-secondary:hover { border-color:var(--border2); }
+
+/* Toolbar */
+.toolbar { display:flex; gap:8px; align-items:center; flex-wrap:wrap; margin-bottom:1rem; }
+.search-input { background:var(--bg); border:1px solid var(--border); color:var(--text); padding:8px 12px; border-radius:10px; font-size:13px; outline:none; min-width:200px; }
+.search-input:focus { border-color:var(--accent); }
+.filter-select { background:var(--bg); border:1px solid var(--border); color:var(--text); padding:8px 12px; border-radius:10px; font-size:13px; outline:none; }
+.spacer { flex:1; }
+
+/* Table */
+.table-wrap { background:var(--bg2); border:1px solid var(--border); border-radius:16px; overflow:hidden; }
+.table-scroll { overflow-x:auto; max-height:calc(100vh - 380px); }
+table { width:100%; border-collapse:collapse; font-size:13px; }
+th { padding:10px 14px; text-align:left; font-size:11px; color:var(--muted); font-family:monospace; text-transform:uppercase; background:var(--bg); position:sticky; top:0; white-space:nowrap; border-bottom:1px solid var(--border); }
+td { padding:10px 14px; border-bottom:0.5px solid var(--border); vertical-align:middle; }
+tr:hover td { background:rgba(99,102,241,0.05); }
+.empty-state { text-align:center; padding:3rem; color:var(--muted); }
+
+/* Pagination */
+.pagination { display:flex; justify-content:space-between; align-items:center; padding:10px 14px; border-top:1px solid var(--border); font-size:12px; color:var(--muted); }
+.page-btn { background:var(--bg); border:1px solid var(--border); color:var(--text); padding:4px 10px; border-radius:6px; cursor:pointer; font-size:12px; }
+.page-btn:disabled { opacity:0.4; cursor:not-allowed; }
+
+/* Loading */
+.loading-badge { display:none; background:var(--accent); color:#fff; font-size:11px; padding:3px 10px; border-radius:20px; font-family:monospace; }
+.loading-badge.show { display:inline-block; }
+
+/* Progress bar */
+.progress-wrap { display:none; align-items:center; gap:8px; font-size:11px; font-family:monospace; }
+.progress-wrap.show { display:flex; }
+.progress-bar-bg { width:200px; height:6px; background:var(--border); border-radius:3px; overflow:hidden; }
+.progress-bar-fill { height:100%; background:var(--accent); border-radius:3px; width:0%; transition:width 0.3s; }
+
+/* Drop zone */
+.drop-zone { border:2px dashed var(--border); border-radius:12px; padding:1.5rem; text-align:center; cursor:pointer; transition:all 0.15s; }
+.drop-zone:hover, .drop-zone.drag-over { border-color:var(--accent); background:rgba(99,102,241,0.05); }
+.drop-zone input[type=file] { display:none; }
+.drop-zone-icon { font-size:28px; margin-bottom:6px; }
+.drop-zone-text { font-size:13px; color:var(--muted); }
+.drop-zone-text span { font-size:11px; }
+.drop-status { font-size:12px; margin-top:8px; font-family:monospace; }
+
+/* Status badge */
+.status-badge { padding:3px 10px; border-radius:20px; font-size:11px; font-weight:600; font-family:monospace; white-space:nowrap; }
+.s-delivered { background:var(--success-bg); color:var(--success); }
+.s-retur { background:var(--danger-bg); color:var(--danger); }
+.s-undell { background:var(--warn-bg); color:var(--warn); }
+.s-onproses { background:#1c1917; color:#a8a29e; }
+
+/* Resizable columns */
+th { position:relative; }
+th .resizer { position:absolute; right:0; top:0; height:100%; width:5px; cursor:col-resize; user-select:none; z-index:1; }
+th .resizer:hover, th .resizer.active { background:var(--accent); opacity:0.5; }
+
+/* Date filter buttons */
+.tgl-btn { background:var(--bg); border:1px solid var(--border); color:var(--muted); padding:6px 12px; border-radius:20px; font-size:12px; cursor:pointer; white-space:nowrap; transition:all 0.15s; }
+.tgl-btn:hover { border-color:var(--accent); color:var(--text); }
+.tgl-btn.active { background:var(--accent); border-color:var(--accent); color:#fff; font-weight:600; }
+
+/* Force page-resi to correct position */
+#page-resi { position:fixed !important; top:50% !important; left:50% !important; transform:translate(-50%,-50%) !important; z-index:500; background:var(--bg); width:90%; max-width:480px; border-radius:16px; padding:1.5rem; box-shadow:0 20px 60px rgba(0,0,0,0.5); }
+#page-resi.active { display:block !important; }
+
+/* Page sections */
+.page { display:none; }
+.page.active { display:block; }
+
+/* Alert banners */
+.alert-bar { padding:10px 16px; border-radius:12px; font-size:13px; display:flex; align-items:center; gap:10px; margin-bottom:10px; cursor:pointer; }
+.alert-bar.warn { background:#431407; border:1px solid #f97316; color:#fdba74; }
+.alert-bar.danger { background:#450a0a; border:1px solid #ef4444; color:#fca5a5; }
+.alert-bar .alert-count { font-weight:800; font-size:16px; margin-right:4px; }
+.alert-bar .alert-close { margin-left:auto; opacity:0.6; font-size:16px; }
+
+/* Date chips */
+.tgl-chip, .tgl-btn { background:var(--bg); border:1px solid var(--border); color:var(--muted); padding:5px 14px; border-radius:20px; font-size:12px; font-weight:500; cursor:pointer; transition:all 0.15s; white-space:nowrap; }
+.tgl-chip:hover, .tgl-btn:hover { border-color:var(--accent); color:var(--accent); }
+.tgl-chip.active, .tgl-btn.active { background:var(--accent); border-color:var(--accent); color:#fff; }
+
+/* Lacak result */
+.track-card { background:var(--bg2); border:1px solid var(--border); border-radius:16px; padding:1.5rem; margin-bottom:1rem; }
+.track-timeline { margin-top:1rem; }
+.track-item { display:flex; gap:12px; padding:10px 0; border-bottom:0.5px solid var(--border); align-items:flex-start; }
+.track-dot { width:8px; height:8px; border-radius:50%; background:var(--border2); margin-top:5px; flex-shrink:0; }
+.track-dot.active { background:var(--accent); }
+.track-meta { font-size:11px; color:var(--muted); font-family:monospace; }
+.track-loc { font-size:11px; color:var(--muted); font-weight:600; margin-top:1px; }
+.track-desc { font-size:13px; margin-top:3px; }
+.track-reason { font-size:11px; color:var(--danger); margin-top:3px; }
+
+@media(max-width:768px) {
+  /* Header */
+  .header { padding:0 12px; height:48px; }
+  .logo { font-size:15px; }
+  #user-role-badge { font-size:11px; }
+  #theme-btn { padding:4px 8px; font-size:12px; }
+  .btn-logout { padding:4px 10px; font-size:11px; }
+
+  /* Nav */
+  .nav-tabs { overflow-x:auto; -webkit-overflow-scrolling:touch; padding:0 12px; gap:0; scrollbar-width:none; }
+  .nav-tabs::-webkit-scrollbar { display:none; }
+  .nav-tab { padding:10px 14px; font-size:12px; flex-shrink:0; }
+
+  /* Main */
+  .main { padding:12px; }
+
+  /* Summary */
+  .summary-grid { grid-template-columns:repeat(2,1fr); gap:8px; margin-bottom:12px; }
+  .sum-card { padding:10px 12px; }
+  .sum-label { font-size:10px; }
+  .sum-value { font-size:20px; }
+
+  /* Toolbar - 2 rows */
+  .toolbar { display:grid; grid-template-columns:1fr 1fr; gap:6px; margin-bottom:10px; }
+  .toolbar .search-input { grid-column:1/-1; }
+  .toolbar .spacer { display:none; }
+  #count-info { grid-column:1/-1; text-align:right; }
+  .filter-select, .search-input { font-size:12px; padding:7px 10px; width:100%; }
+
+  /* Table */
+  .table-scroll { max-height:calc(100vh - 340px); }
+  td, th { padding:8px 10px; font-size:12px; white-space:nowrap; }
+  .col-no, .col-jumlah, .col-hp { display:none; }
+
+  /* Cards */
+  .card { padding:1rem; }
+  .track-card { padding:1rem; }
+
+  /* Lacak input */
+  #page-lacak .card > div { flex-direction:column; }
+  #lacak-resi, #lacak-eks { width:100% !important; min-width:unset !important; }
+}
+
+@media(max-width:400px) {
+  .summary-grid { grid-template-columns:repeat(2,1fr); }
+  .col-resi { display:none; }
+  .sum-value { font-size:18px; }
+}
+</style>
+<!-- Tracking Detail Modal -->
+<div id="track-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:1000;align-items:center;justify-content:center;padding:1rem">
+  <div style="background:var(--bg2);border-radius:20px;padding:1.5rem;max-width:560px;width:100%;max-height:85vh;overflow-y:auto;position:relative">
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:1rem">
+      <div>
+        <div style="font-size:15px;font-weight:700" id="tm-resi"></div>
+        <div style="font-size:12px;color:var(--muted);margin-top:2px" id="tm-receiver"></div>
+      </div>
+      <div style="display:flex;align-items:center;gap:8px">
+        <span id="tm-status-badge" class="status-badge"></span>
+        <button onclick="document.getElementById('track-modal').style.display='none'" style="background:none;border:none;font-size:20px;cursor:pointer;color:var(--muted);line-height:1">✕</button>
+      </div>
+    </div>
+    <div id="tm-alerts" style="margin-bottom:1rem"></div>
+    <div id="tm-info" style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:1rem"></div>
+    <div id="tm-body">
+      <div style="text-align:center;padding:2rem;color:var(--muted)">Memuat...</div>
+    </div>
+  </div>
+</div>
+
+<script>
+// Apply theme before render to prevent flash
+const _t = localStorage.getItem('po_theme') || 'dark';
+if (_t === 'light') document.documentElement.setAttribute('data-theme','light');
+</script>
+</head>
+<body>
+
+<div class="header">
+  <div class="logo">Progres<span>Orderan</span></div>
+  <div class="user-info">
+    <span id="user-email" style="display:none"></span>
+    <span id="user-role-badge" style="font-size:12px;color:var(--text)"></span>
+    <button id="theme-btn" onclick="toggleTheme()" style="background:none;border:1px solid var(--border);color:var(--muted);padding:5px 10px;border-radius:8px;cursor:pointer;font-size:16px" title="Ganti tema">🌙</button>
+    <div onclick="toggleTheme()" id="theme-toggle" style="display:flex;align-items:center;gap:6px;cursor:pointer;background:var(--bg);border:1px solid var(--border);border-radius:99px;padding:4px 10px;font-size:12px;user-select:none">
+      <span id="theme-icon">🌙</span>
+      <span id="theme-label" style="color:var(--muted)">Gelap</span>
+    </div>
+    <button class="btn-logout" onclick="logout()">Keluar</button>
+  </div>
+
+
+
+  <!-- INPUT RESI PAGE -->
+  <div class="page" id="page-resi">
+    <div style="max-width:480px">
+      <div class="card">
+        <div class="card-title" style="margin-bottom:0.5rem">Upload File Resi</div>
+        <div class="card-desc" style="margin-bottom:0.75rem">Kolom: HP + Resi (.csv / .xlsx)</div>
+        <div class="drop-zone" id="dz-resi" onclick="document.getElementById('file-resi').click()">
+          <input type="file" id="file-resi" accept=".csv,.xlsx,.xls" onchange="parseResiFile(this.files[0])" />
+          <div class="drop-zone-icon">📋</div>
+          <div class="drop-zone-text">Upload file resi<br><span>HP + Resi</span></div>
+        </div>
+        <div id="resi-status" class="drop-status"></div>
+        <button class="btn-primary" id="btn-save-resi" disabled onclick="saveResi()" style="margin-top:0.75rem;width:100%">💾 Simpan Resi</button>
+        <span class="loading-badge" id="loading-resi">menyimpan...</span>
+        <div id="resi-result" style="font-size:12px;margin-top:8px;font-family:monospace"></div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- Alert Banner -->
+<div id="alert-banner" style="display:none;background:#4f46e5;color:#fff;padding:12px 16px;font-size:13px;align-items:center;gap:10px;flex-wrap:wrap;border-bottom:1px solid #6366f1">
+  <span style="font-size:16px">⚠️</span>
+  <span id="alert-banner-text" style="flex:1"></span>
+  <button onclick="document.getElementById('alert-banner').style.display='none'" style="background:rgba(255,255,255,0.15);border:1px solid rgba(255,255,255,0.3);color:#fff;padding:4px 10px;border-radius:6px;cursor:pointer;font-size:12px;white-space:nowrap">✕ Tutup</button>
+  <button onclick="showAlertDetail()" style="background:#fff;color:#4f46e5;border:none;padding:4px 12px;border-radius:6px;cursor:pointer;font-size:12px;font-weight:700;white-space:nowrap">Lihat Detail →</button>
+</div>
+
+<!-- Alert Modal -->
+<div id="alert-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:999;align-items:center;justify-content:center">
+  <div style="background:var(--bg2);border-radius:20px;padding:1.5rem;max-width:500px;width:90%;max-height:80vh;overflow-y:auto">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem">
+      <div style="font-size:16px;font-weight:700">⚠️ Perlu Perhatian</div>
+      <button onclick="document.getElementById('alert-modal').style.display='none'" style="background:none;border:none;font-size:20px;cursor:pointer;color:var(--muted)">✕</button>
+    </div>
+    <div id="alert-modal-body"></div>
+    <button onclick="document.getElementById('alert-modal').style.display='none'" class="btn-primary" style="width:100%;margin-top:1rem;justify-content:center">Mengerti</button>
+  </div>
+</div>
+
+<div class="nav-tabs">
+  <div class="nav-tab active" id="tab-status" onclick="switchTab('status')">📦 Status Pengiriman</div>
+  <div class="nav-tab" id="tab-lacak" onclick="switchTab('lacak')">🔍 Lacak Manual</div>
+  <div class="nav-tab" id="tab-resi" onclick="switchTab('resi')" style="display:none">📋 Input Resi</div>
+</div>
+
+<div class="main">
+
+  <!-- STATUS PENGIRIMAN -->
+  <div class="page active" id="page-status">
+    <div id="alert-section" style="margin-bottom:10px"></div>
+    <div class="summary-grid">
+      <div class="sum-card c-total" onclick="applyFilter('all')">
+        <div class="sum-label">Total Kiriman</div>
+        <div class="sum-value" id="st-total">—</div>
+      </div>
+      <div class="sum-card c-onproses" onclick="applyFilter('ON PROSES')">
+        <div class="sum-label">On Proses</div>
+        <div class="sum-value" id="st-onproses">—</div>
+      </div>
+      <div class="sum-card c-undell" onclick="applyFilter('UNDELL')">
+        <div class="sum-label">Undell</div>
+        <div class="sum-value" id="st-undell">—</div>
+      </div>
+      <div class="sum-card c-delivered" onclick="applyFilter('DELIVERED')">
+        <div class="sum-label">Delivered</div>
+        <div class="sum-value" id="st-delivered">—</div>
+      </div>
+      <div class="sum-card c-retur" onclick="applyFilter('RETUR')">
+        <div class="sum-label">Retur</div>
+        <div class="sum-value" id="st-retur">—</div>
+      </div>
+    </div>
+
+    <div class="toolbar">
+      <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap">
+        <input type="date" id="filter-tgl-custom" onchange="loadData()"
+          style="border:1px solid var(--border);border-radius:10px;padding:7px 12px;background:var(--bg);color:var(--text);font-size:12px;outline:none" />
+        <button class="btn-secondary" onclick="document.getElementById('filter-tgl-custom').value=new Date().toISOString().slice(0,10);loadData();" style="font-size:12px">Hari Ini</button>
+        <button class="btn-secondary" onclick="document.getElementById('filter-tgl-custom').value=new Date(Date.now()-86400000).toISOString().slice(0,10);loadData();" style="font-size:12px">Kemarin</button>
+        <button class="btn-secondary" onclick="document.getElementById('filter-tgl-custom').value='';loadData();" style="font-size:12px">Semua</button>
+      </div>
+      <select class="filter-select" id="filter-status" onchange="renderTable()">
+        <option value="all">Semua Status</option>
+        <option value="ON PROSES">On Proses</option>
+        <option value="UNDELL">Undell</option>
+        <option value="DELIVERED">Delivered</option>
+        <option value="RETUR">Retur</option>
+      </select>
+      <select class="filter-select" id="filter-eks" onchange="renderTable()">
+        <option value="all">Semua Ekspedisi</option>
+        <option value="JNE">JNE</option>
+        <option value="JNT">JNT</option>
+        <option value="SICEPAT">SiCepat</option>
+        <option value="LION">Lion</option>
+        <option value="POS">POS</option>
+        <option value="SAP">SAP</option>
+        <option value="NINJA">Ninja</option>
+        <option value="IDX">IDX</option>
+        <option value="ANTERAJA">Anteraja</option>
+      </select>
+      <select class="filter-select" id="filter-cs" onchange="renderTable();updateSummary();checkAlerts();">
+        <option value="all">Semua CS</option>
+      </select>
+      <input class="search-input" id="search-box" type="text" placeholder="Cari nama / HP / resi..." oninput="renderTable()" />
+      <span class="spacer"></span>
+      <button class="btn-primary" onclick="updateOtomatis()" id="btn-update">🔄 Update Semua</button>
+      <button class="btn-secondary" onclick="loadData()" style="font-size:12px" id="btn-refresh">↻ Refresh</button>
+
+      <span class="loading-badge" id="loading-update">mengecek...</span>
+      <span id="count-info" style="font-size:11px;color:var(--muted);font-family:monospace"></span>
+    </div>
+
+    <div class="progress-wrap" id="update-progress" style="margin-bottom:0.75rem">
+      <div class="progress-bar-bg"><div class="progress-bar-fill" id="update-bar"></div></div>
+      <span id="update-text">0/0</span>
+    </div>
+    <div id="update-result" style="font-size:12px;margin-bottom:0.75rem"></div>
+
+    <div class="table-wrap">
+      <div class="table-scroll">
+        <table>
+          <thead>
+            <tr>
+              <th><input type="checkbox" id="chk-all" onchange="toggleAll(this)"></th><th>Tanggal</th><th class="col-no">No</th><th>Nama</th><th class="col-hp">HP</th>
+              <th>Ekspedisi</th><th class="col-resi">Resi</th><th class="col-jumlah">Jumlah</th><th>Kabupaten</th><th>CS</th>
+              <th>Update CRM</th><th>Status Akhir</th><th></th>
+            </tr>
+          </thead>
+          <tbody id="status-tbody"><tr><td colspan="12" class="empty-state">Klik Refresh untuk memuat data</td></tr></tbody>
+        </table>
+      </div>
+      <div class="pagination">
+        <span id="page-info">—</span>
+        <div style="display:flex;gap:4px" id="page-btns"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- LACAK MANUAL -->
+  <div class="page" id="page-lacak">
+    <div class="card" style="max-width:600px;margin-bottom:1.25rem">
+      <div class="card-title" style="margin-bottom:0.75rem">Lacak Paket</div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+        <input class="search-input" id="lacak-resi" placeholder="Nomor resi..." style="flex:1;min-width:180px"
+          onkeydown="if(event.key==='Enter')lacakManual()" />
+        <select class="filter-select" id="lacak-eks">
+          <option value="JNE">JNE</option>
+          <option value="JT">JNT</option>
+          <option value="SiCepat">SiCepat</option>
+          <option value="lion">Lion</option>
+          <option value="POS">POS Indonesia</option>
+          <option value="SAP">SAP</option>
+          <option value="anteraja">Anteraja</option>
+          <option value="Ninja">Ninja</option>
+          <option value="iDexpress">IDX</option>
+        </select>
+        <button class="btn-primary" onclick="lacakManual()">Lacak</button>
+        <span class="loading-badge" id="loading-lacak">melacak...</span>
+      </div>
+    </div>
+    <div id="lacak-result" style="display:none"></div>
+    <div id="lacak-empty" style="display:none;text-align:center;padding:3rem;color:var(--muted)">Resi tidak ditemukan.</div>
+  </div>
+
+</div>
+
+<!-- Update Status Modal -->
+<div id="update-status-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:1000;align-items:center;justify-content:center">
+  <div style="background:var(--bg2);border-radius:20px;padding:1.5rem;max-width:400px;width:90%">
+    <div style="font-size:15px;font-weight:700;margin-bottom:4px">Update Status Orderan</div>
+    <div id="us-nama" style="font-size:12px;color:var(--muted);margin-bottom:1rem"></div>
+    <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:1.25rem">
+      <button class="us-btn" onclick="selectStatus('ON PROSES')" style="padding:10px;border-radius:10px;border:1px solid var(--border);background:var(--bg);color:var(--text);cursor:pointer;text-align:left;font-size:13px">⏳ ON PROSES — Masih dalam perjalanan</button>
+      <button class="us-btn" onclick="selectStatus('UNDELL')" style="padding:10px;border-radius:10px;border:1px solid var(--border);background:var(--bg);color:var(--text);cursor:pointer;text-align:left;font-size:13px">⚠️ UNDELL — Gagal diantar</button>
+      <button class="us-btn" onclick="selectStatus('DELIVERED')" style="padding:10px;border-radius:10px;border:1px solid var(--border);background:var(--bg);color:var(--text);cursor:pointer;text-align:left;font-size:13px">✅ DELIVERED — Sudah diterima</button>
+      <button class="us-btn" onclick="selectStatus('RETUR')" style="padding:10px;border-radius:10px;border:1px solid var(--border);background:var(--bg);color:var(--text);cursor:pointer;text-align:left;font-size:13px">🔴 RETUR — Dikembalikan</button>
+    </div>
+    <div style="display:flex;gap:8px">
+      <button onclick="document.getElementById('update-status-modal').style.display='none'" class="btn-secondary" style="flex:1">Batal</button>
+      <button onclick="saveUpdateStatus()" class="btn-primary" id="btn-save-status" disabled style="flex:1;justify-content:center">Simpan</button>
+    </div>
+    <span class="loading-badge" id="loading-us">menyimpan...</span>
+  </div>
+</div>
+
+<script>
+// ════════════════════════════════════════════════
+//  KONFIGURASI — GANTI SESUAI PROJECT SUPABASE ANDA
+// ════════════════════════════════════════════════
+const CONFIG = {
+  // Supabase AUTH (project BARU — sama dengan yang di index.html)
+  AUTH_URL : 'GANTI_DENGAN_SUPABASE_AUTH_URL',
+  AUTH_KEY : 'GANTI_DENGAN_SUPABASE_AUTH_ANON_KEY',
+
+  // Supabase DATA (project LAMA — tempat tabel all_orderan)
+  DATA_URL : 'https://lqpcnzdssvvcayqvdjxs.supabase.co',
+  DATA_KEY : 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxxcGNuemRzc3Z2Y2F5cXZkanhzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUwMTgxMDIsImV4cCI6MjA5MDU5NDEwMn0.4M4okAfJWhBD6AbL71utafrFL-ZgbVxcz3ANLnG_jH4',
+};
+
+// Dua client terpisah:
+// sbAuth  → hanya untuk cek login / logout CS
+// sb      → untuk baca/tulis data orderan
+const sbAuth = supabase.createClient(CONFIG.AUTH_URL, CONFIG.AUTH_KEY);
+const sb     = supabase.createClient(CONFIG.DATA_URL, CONFIG.DATA_KEY);
+
+// Auth check — pakai sbAuth (Supabase project baru)
+let userRole   = '';
+let userCSName = '';
+
+async function initAuth() {
+  // Coba baca dari sessionStorage dulu (lebih cepat)
+  const storedCSName = sessionStorage.getItem('po_cs_name');
+  const storedToken  = sessionStorage.getItem('po_auth_token');
+
+  if (storedCSName !== null && storedToken) {
+    // Sudah ada sesi dari login
+    userCSName = storedCSName;
+    userRole   = 'cs';
+    onAuthReady();
+    return;
+  }
+
+  // Fallback: cek sesi aktif di sbAuth
+  const { data } = await sbAuth.auth.getSession();
+  if (!data.session) {
+    window.location.href = '/';
+    return;
+  }
+  const meta = data.session.user?.user_metadata || {};
+  userRole   = meta.role || 'cs';
+  userCSName = meta.cs_name || '';
+  sessionStorage.setItem('po_cs_name', userCSName);
+  sessionStorage.setItem('po_username', meta.username || '');
+  sessionStorage.setItem('po_auth_token', data.session.access_token || '');
+  onAuthReady();
+}
+
+function onAuthReady() {
+  document.getElementById('user-role-badge').textContent =
+    userRole === 'admin' || userRole === 'spv'
+      ? '👑 ' + userRole.toUpperCase()
+      : '👤 CS: ' + userCSName;
+
+  if (userRole === 'admin' || userRole === 'spv') {
+    const tabResi = document.getElementById('tab-resi');
+    if (tabResi) tabResi.style.display = 'block';
+  }
+
+  // ── Default filter: HARI INI ──────────────────
+  const todayStr = new Date().toISOString().slice(0, 10);
+  const tglInput = document.getElementById('filter-tgl-custom');
+  if (tglInput && !tglInput.value) tglInput.value = todayStr;
+
+  loadData();
+}
+
+async function logout() {
+  sessionStorage.removeItem('po_cs_name');
+  sessionStorage.removeItem('po_username');
+  sessionStorage.removeItem('po_auth_token');
+  await sbAuth.auth.signOut();
+  window.location.href = '/';
+}
+
+initAuth();
+
+// Tab switching
+function switchTab(tab) {
+  document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.getElementById('tab-' + tab).classList.add('active');
+  document.getElementById('page-' + tab).classList.add('active');
+  sessionStorage.setItem('po_tab', tab);
+}
+
+// ── DATA ──────────────────────────────────────────────────────────────────────
+let allData = [], filteredData = [], currentPage = 1;
+let alertItems = [];
+const PAGE_SIZE = 100;
+
+const COURIER_MAP = {
+  'JNE':'JNE','JNT':'JT','SiCepat':'SiCepat','Lion':'lion','LION':'lion',
+  'SAP':'SAP','Anteraja':'anteraja','ANTERAJA':'anteraja',
+  'Ninja':'Ninja','NINJA':'Ninja','IDX':'iDexpress','SICEPAT':'SiCepat',
+  'POS':'POS','POS Indonesia':'POS'
+};
+
+function extractEks(pembayaran) {
+  const src = (pembayaran||'').toUpperCase();
+  if (src.includes('SICEPAT')) return 'SiCepat';
+  if (src.includes('ANTERAJA')) return 'Anteraja';
+  if (src.includes('NINJA')) return 'Ninja';
+  if (src.includes('LION')) return 'Lion';
+  if (src.includes('SAP')) return 'SAP';
+  if (src.includes('IDX') || src.includes('IDEXPRESS')) return 'IDX';
+  if (src.includes('JNE')) return 'JNE';
+  if (src.includes('JNT') || src.includes('J&T')) return 'JNT';
+  if (src.includes('POS')) return 'POS';
+  return '';
+}
+
+function statusClass(crm) {
+  const c = (crm||'').toUpperCase();
+  if (c === 'DELIVERED') return 's-delivered';
+  if (c === 'RETUR') return 's-retur';
+  if (c.startsWith('UNDELL')) return 's-undell';
+  return 's-onproses';
+}
+
+function statusLabel(crm) {
+  const c = crm||'—';
+  if (c === 'DELIVERED') return 'DELIVERED';
+  if (c === 'RETUR') return 'RETUR';
+  if (c.startsWith('UNDELL')) return 'UNDELL';
+  if (c.startsWith('ON PROSES')) return 'ON PROSES';
+  return c;
+}
+
+async function loadData() {
+  let all = [], from = 0;
+
+  // Baca filter tanggal dari input (format: YYYY-MM-DD)
+  const tglVal = document.getElementById('filter-tgl-custom')?.value || '';
+
+  while (true) {
+    let query = sb.from('all_orderan')
+      .select('id,no,nama,hp,tanggal,pembayaran,resi,jumlah,cs,kabupaten,update_crm,status_akhir')
+      .eq('sumber','validasi')
+      .order('tanggal', { ascending: false });
+
+    // CS hanya lihat data miliknya
+    if (userRole !== 'admin' && userRole !== 'spv' && userCSName) {
+      query = query.ilike('cs', userCSName);
+    }
+    const { data, error } = await query.range(from, from+999);
+    if (error || !data?.length) break;
+    all.push(...data);
+    if (data.length < 1000) break;
+    from += 1000;
+  }
+
+  // Filter tanggal client-side (format kolom tanggal: MM/DD/YYYY HH:MM:SS)
+  if (tglVal) {
+    const [fy, fm, fd] = tglVal.split('-').map(Number);
+    all = all.filter(r => {
+      const raw = (r.tanggal || '').split(' ')[0]; // ambil bagian tanggal saja
+      if (!raw) return false;
+      const parts = raw.split('/');
+      if (parts.length < 3) return false;
+      const [m, d, y] = parts.map(Number);
+      return y === fy && m === fm && d === fd;
+    });
+  }
+
+  allData = all;
+  updateSummary();
+  showAlerts();
+  updateCSFilter();
+  applyFilter(document.getElementById('filter-status').value);
+  checkAlerts();
+}
+
+function showAlerts() {
+  const section = document.getElementById('alert-section');
+  if (!section) return;
+
+  const alerts = [];
+
+  // Undell - perlu tindakan
+  const undell = allData.filter(r => (r.update_crm||'').toUpperCase().startsWith('UNDELL'));
+  if (undell.length) {
+    alerts.push({
+      type: 'danger',
+      icon: '🚨',
+      count: undell.length,
+      msg: 'orderan UNDELL — gagal diantar, segera hubungi penerima!',
+      filter: 'UNDELL'
+    });
+  }
+
+  // ON PROSES tapi sudah > 7 hari
+  const now = Date.now();
+  const oldOnProses = allData.filter(r => {
+    if ((r.update_crm||'').toUpperCase() !== 'ON PROSES' && !(r.update_crm||'').startsWith('ON PROSES (')) return false;
+    const tgl = r.tanggal;
+    if (!tgl) return false;
+    const parts = tgl.split(/[\/ :]/);
+    // MM/DD/YYYY or similar
+    const d = new Date(parts[2], parts[0]-1, parts[1]);
+    return (now - d.getTime()) > 7 * 86400000;
+  });
+  if (oldOnProses.length) {
+    alerts.push({
+      type: 'warn',
+      icon: '⚠️',
+      count: oldOnProses.length,
+      msg: 'orderan ON PROSES lebih dari 7 hari — cek status pengiriman!',
+      filter: 'ON PROSES'
+    });
+  }
+
+  if (!alerts.length) { section.innerHTML = ''; return; }
+
+  section.innerHTML = alerts.map((a,i) => `
+    <div class="alert-bar ${a.type}" onclick="applyFilter('${a.filter}')" id="alert-${i}">
+      <span>${a.icon}</span>
+      <span><span class="alert-count">${a.count}</span> ${a.msg}</span>
+      <span class="alert-close" onclick="event.stopPropagation();document.getElementById('alert-${i}').remove()">✕</span>
+    </div>`).join('');
+}
+
+function updateSummary() {
+  // Use filteredData if CS filter is active, else allData
+  const csF = document.getElementById('filter-cs')?.value || 'all';
+  const sourceData = csF !== 'all' ? allData.filter(r=>(r.cs||'')=== csF) : allData;
+  let total=0, onproses=0, undell=0, delivered=0, retur=0;
+  sourceData.forEach(r => {
+    total++;
+    const c = (r.update_crm||'').toUpperCase();
+    if (c === 'DELIVERED') delivered++;
+    else if (c === 'RETUR') retur++;
+    else if (c.startsWith('UNDELL')) undell++;
+    else onproses++;
+  });
+  document.getElementById('st-total').textContent     = total.toLocaleString();
+  document.getElementById('st-onproses').textContent  = onproses.toLocaleString();
+  document.getElementById('st-undell').textContent    = undell.toLocaleString();
+  document.getElementById('st-delivered').textContent = delivered.toLocaleString();
+  document.getElementById('st-retur').textContent     = retur.toLocaleString();
+}
+
+function applyFilter(status) {
+  if (status) {
+    document.getElementById('filter-status').value = status;
+  }
+  renderTable();
+}
+
+function renderTable() {
+  const f   = document.getElementById('filter-status').value;
+  const eks = document.getElementById('filter-eks').value;
+  const q   = document.getElementById('search-box').value.toLowerCase();
+
+  const cs = document.getElementById('filter-cs')?.value || 'all';
+  filteredData = allData.filter(r => {
+    if (cs !== 'all' && (r.cs||'').trim() !== cs) return false;
+    const crm = (r.update_crm||'').toUpperCase();
+    if (f !== 'all') {
+      if (f === 'ON PROSES' && (crm === 'DELIVERED' || crm === 'RETUR' || crm.startsWith('UNDELL'))) return false;
+      else if (f === 'UNDELL' && !crm.startsWith('UNDELL')) return false;
+      else if (f === 'DELIVERED' && crm !== 'DELIVERED') return false;
+      else if (f === 'RETUR' && crm !== 'RETUR') return false;
+    }
+    if (eks !== 'all') {
+      const e = extractEks(r.pembayaran||'').toUpperCase();
+      if (!e.includes(eks.toUpperCase())) return false;
+    }
+    const csFilter = document.getElementById('filter-cs')?.value || 'all';
+    if (csFilter !== 'all' && (r.cs||'').trim() !== csFilter) return false;
+    if (q) {
+      const s = (r.nama||'')+(r.hp||'')+(r.resi||'');
+      if (!s.toLowerCase().includes(q)) return false;
+    }
+    return true;
+  });
+
+  currentPage = 1;
+  doRenderTable();
+}
+
+function doRenderTable() {
+  const tbody = document.getElementById('status-tbody');
+  const start = (currentPage-1)*PAGE_SIZE;
+  const rows  = filteredData.slice(start, start+PAGE_SIZE);
+  document.getElementById('count-info').textContent = filteredData.length.toLocaleString() + ' baris';
+
+  if (!rows.length) {
+    tbody.innerHTML = '<tr><td colspan="12" class="empty-state">Tidak ada data</td></tr>';
+  } else {
+    tbody.innerHTML = rows.map(r => {
+      const crm = r.update_crm||'';
+      const eks = extractEks(r.pembayaran||'');
+      const sc  = statusClass(crm);
+      const sl  = statusLabel(crm);
+      const crmDetail = crm.includes('(') ? crm.slice(crm.indexOf('(')+1, crm.lastIndexOf(')')) : '';
+      return `<tr>
+        <td><input type="checkbox" class="row-chk" data-idx="${filteredData.indexOf(r)}"></td>
+        <td style="font-size:11px;font-family:monospace;color:var(--muted)">${r.tanggal||''}</td>
+        <td class="col-no" style="font-size:11px;font-family:monospace">${r.no||''}</td>
+        <td style="font-size:12px">${r.nama||''}</td>
+        <td class="col-hp" style="font-family:monospace;font-size:12px">${r.hp||''}</td>
+        <td style="font-family:monospace;font-size:12px;font-weight:600">${eks||'—'}</td>
+        <td class="col-resi" style="font-family:monospace;font-size:11px">${r.resi ? `<span onclick="openTrackModal('${r.resi}','${extractEks(r.pembayaran||'')}')" style="cursor:pointer;color:var(--accent);text-decoration:underline">${r.resi}</span>` : '<span style="color:var(--muted);font-size:10px">belum ada</span>'}</td>
+        <td class="col-jumlah" style="font-size:11px;color:var(--muted)">${(r.jumlah||'').slice(0,25)}</td>
+        <td style="font-size:11px">${r.kabupaten||''}</td>
+        <td style="font-size:11px;color:var(--muted)">${r.cs||''}</td>
+        <td>
+          <span class="status-badge ${sc}">${sl}</span>
+          ${crmDetail ? `<div style="font-size:10px;color:var(--muted);margin-top:3px;max-width:200px">${crmDetail.slice(0,80)}${crmDetail.length>80?'...':''}</div>` : ''}
+        </td>
+        <td style="font-size:11px;color:var(--muted)">${r.status_akhir||''}</td>
+        <td>
+          <button onclick="showUpdateStatus(${filteredData.indexOf(r)})" 
+            style="background:var(--bg);border:1px solid var(--border);color:var(--muted);padding:3px 8px;border-radius:6px;cursor:pointer;font-size:11px">
+            ✏️
+          </button>
+        </td>
+      </tr>`;
+    }).join('');
+  }
+
+  const total = filteredData.length;
+  const totalPages = Math.ceil(total/PAGE_SIZE);
+  const start2 = (currentPage-1)*PAGE_SIZE;
+  document.getElementById('page-info').textContent = total ? `${Math.min(start2+1,total)}–${Math.min(start2+PAGE_SIZE,total)} dari ${total.toLocaleString()}` : '0';
+  initResizableCols();
+  const btns = document.getElementById('page-btns');
+  btns.innerHTML = '';
+  const mb = (lbl,fn,dis) => { const b=document.createElement('button'); b.className='page-btn'; b.textContent=lbl; b.disabled=dis; b.onclick=fn; return b; };
+  btns.appendChild(mb('‹',()=>{currentPage--;doRenderTable();},currentPage===1));
+  btns.appendChild(mb('›',()=>{currentPage++;doRenderTable();},currentPage>=totalPages||!totalPages));
+}
+
+// ── UPDATE OTOMATIS ───────────────────────────────────────────────────────────
+const trackCache = {};
+
+async function updateOtomatis() {
+  const btn    = document.getElementById('btn-update');
+  const prog   = document.getElementById('update-progress');
+  const bar    = document.getElementById('update-bar');
+  const text   = document.getElementById('update-text');
+  const result = document.getElementById('update-result');
+
+  btn.disabled = true;
+  prog.classList.add('show');
+  result.innerHTML = '';
+
+  try {
+    // Ambil semua yang punya resi dan belum DELIVERED/RETUR
+    let toCheck = [], from = 0;
+    while (true) {
+      let q = sb.from('all_orderan')
+        .select('id,resi,pembayaran,instruksi,update_crm')
+        .eq('sumber','validasi')
+        .not('resi','is',null)
+        .neq('resi','')
+        .not('status_akhir','in','("DELIVERED","RETUR")');
+      // Filter by CS if not admin/spv
+      if (userRole !== 'admin' && userRole !== 'spv' && userCSName) {
+        q = q.ilike('cs', userCSName);
+      }
+      const { data } = await q.range(from, from+999);
+      if (!data?.length) break;
+      toCheck.push(...data);
+      if (data.length < 1000) break;
+      from += 1000;
+    }
+
+    if (!toCheck.length) {
+      result.innerHTML = '<span style="color:var(--muted)">Tidak ada resi yang perlu dicek.</span>';
+      btn.disabled = false; prog.classList.remove('show'); return;
+    }
+
+    let done=0, updated=0, errors=0;
+    text.textContent = '0/'+toCheck.length;
+
+    const BATCH = 30;
+    for (let i=0; i<toCheck.length; i+=BATCH) {
+      await Promise.all(toCheck.slice(i,i+BATCH).map(async row => {
+        try {
+          const src = (row.pembayaran||'') + ' ' + (row.instruksi||'');
+          const eks = extractEks(src);
+          let newCRM = '', newStatus = '';
+
+          if (eks === 'POS') {
+            // POS via bosampuh
+            const r    = await fetch('/api/pos-tracking?resi='+encodeURIComponent(row.resi));
+            const json = await r.json();
+            if (json.success && json.data) {
+              const state = json.data.connote_state||'';
+              if (state.toUpperCase() === 'DELIVERED') { newCRM='DELIVERED'; newStatus='DELIVERED'; }
+              else if (state.toUpperCase().includes('RETURN')) { newCRM='RETUR'; newStatus='RETUR'; }
+              else if (state.toUpperCase() === 'ON PROCESS') {
+                const lastH = (json.data.connote_history||[]).slice(-1)[0];
+                newCRM = lastH ? 'UNDELL (' + (lastH.content||'').slice(0,120) + ')' : 'UNDELL';
+              } else {
+                const lastH = (json.data.connote_history||[]).slice(-1)[0];
+                newCRM = lastH ? 'ON PROSES (' + (lastH.content||'').slice(0,120) + ')' : 'ON PROSES';
+              }
+            }
+          } else {
+            const courierKey = COURIER_MAP[eks] || eks;
+            if (!courierKey) { done++; return; }
+
+            const cacheKey = row.resi + '_' + courierKey;
+            if (trackCache[cacheKey] && (Date.now()-trackCache[cacheKey].ts) < 1800000) {
+              const c = trackCache[cacheKey];
+              if (c.newCRM && c.newCRM !== row.update_crm) {
+                const upd = { update_crm: c.newCRM };
+                if (c.newStatus) upd.status_akhir = c.newStatus;
+                await sb.from('all_orderan').update(upd).eq('id', row.id);
+                updated++;
+              }
+              done++; return;
+            }
+
+            const r    = await fetch('/api/tracking?tracking_number='+encodeURIComponent(row.resi)+'&courier='+encodeURIComponent(courierKey));
+            const json = await r.json();
+
+            if (json.success && json.data) {
+              const apiStatus = json.data.statusCategory || json.data.status || '';
+              if (apiStatus === 'DELIVERED' || apiStatus === 'POD') { newCRM='DELIVERED'; newStatus='DELIVERED'; }
+              else if (apiStatus.includes('RETUR') || apiStatus.includes('RETURN') || apiStatus === 'RETURNED') { newCRM='RETUR'; newStatus='RETUR'; }
+              else if (apiStatus === 'DEX' || apiStatus === 'UNDELIVERED' || apiStatus === 'FAILED') {
+                const failH = (json.data.history||[]).filter(h => h.code&&(h.code.includes('DEX')||h.code.includes('UNDEL')||h.code.includes('FAIL'))).pop();
+                const reason = failH ? failH.desc.replace(/^(DEX|UNDELIVERED|UNDEL|FAILED)\s*/i,'').trim() : (json.data.SPECIAL_INS||'');
+                newCRM = reason ? 'UNDELL ('+reason.slice(0,150)+')' : 'UNDELL';
+              } else {
+                const lastH = (json.data.history||[]).slice(-1)[0];
+                newCRM = lastH ? 'ON PROSES ('+lastH.desc.trim().slice(0,150)+')' : 'ON PROSES';
+              }
+              trackCache[cacheKey] = { newCRM, newStatus, ts: Date.now() };
+            }
+          }
+
+          if (newCRM && newCRM !== row.update_crm) {
+            const upd = { update_crm: newCRM };
+            if (newStatus) upd.status_akhir = newStatus;
+            await sb.from('all_orderan').update(upd).eq('id', row.id);
+            updated++;
+          }
+        } catch(e) { errors++; }
+        done++;
+      }));
+
+      bar.style.width = Math.round((done/toCheck.length)*100)+'%';
+      text.textContent = done+'/'+toCheck.length+' ('+updated+' diupdate)';
+    }
+
+    result.innerHTML = `<span style="color:var(--success)">✓ Selesai — ${updated} status diupdate dari ${toCheck.length} resi${errors?' ('+errors+' error)':''}</span>`;
+    await loadData();
+
+  } catch(e) {
+    result.innerHTML = '<span style="color:var(--danger)">Error: '+e.message+'</span>';
+  }
+  btn.disabled = false;
+  prog.classList.remove('show');
+}
+
+// ── LACAK MANUAL ─────────────────────────────────────────────────────────────
+async function lacakManual() {
+  const resi  = document.getElementById('lacak-resi').value.trim();
+  const eksVal = document.getElementById('lacak-eks').value;
+  if (!resi) return;
+
+  const badge   = document.getElementById('loading-lacak');
+  const result  = document.getElementById('lacak-result');
+  const emptyEl = document.getElementById('lacak-empty');
+  badge.classList.add('show');
+  result.style.display = 'none';
+  emptyEl.style.display = 'none';
+
+  try {
+    if (eksVal === 'POS') {
+      const r    = await fetch('/api/pos-tracking?resi='+encodeURIComponent(resi));
+      const json = await r.json();
+      if (!json.success || !json.data) { emptyEl.style.display='block'; badge.classList.remove('show'); return; }
+      const d       = json.data;
+      const state   = d.connote_state||'';
+      const stColor = state.toUpperCase()==='DELIVERED'?'var(--success)':state.toUpperCase().includes('RETURN')?'var(--danger)':'var(--warn)';
+      const history = (d.connote_history||[]).slice().reverse();
+      result.innerHTML = `
+        <div class="track-card">
+          <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:10px;margin-bottom:1rem">
+            <div>
+              <div style="font-size:15px;font-weight:700">${resi} <span style="font-size:12px;color:var(--muted)">(POS Indonesia)</span></div>
+              <div style="font-size:12px;color:var(--muted);margin-top:2px">${d.connote_receiver_name||''}</div>
+            </div>
+            <span class="status-badge" style="background:rgba(0,0,0,0.3);color:${stColor};font-size:13px;padding:6px 14px">${state}</span>
+          </div>
+          <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:1rem">
+            ${[['Layanan',d.connote_service||'—'],['Ongkir',d.connote_service_price?'Rp'+Number(d.connote_service_price).toLocaleString('id-ID'):'—'],['Pengirim',d.connote_sender_name||'—']].map(([k,v])=>`<div style="background:var(--bg);padding:10px;border-radius:8px"><div style="font-size:10px;color:var(--muted);font-family:monospace;text-transform:uppercase">${k}</div><div style="font-size:13px;font-weight:600;margin-top:2px">${v}</div></div>`).join('')}
+          </div>
+          <div class="track-timeline">
+            ${history.filter(h=>h.content).map((h,i)=>`<div class="track-item">
+              <div class="track-dot ${i===0?'active':''}"></div>
+              <div>
+                <div class="track-meta">${h.date||''}</div>
+                <div class="track-loc">${h.location_name||''}</div>
+                <div class="track-desc ${i===0?'':''}"> ${h.content||''}</div>
+                ${h.reason_delivery?`<div class="track-reason">⚠ ${h.reason_delivery}</div>`:''}
+              </div>
+            </div>`).join('')}
+          </div>
+        </div>`;
+      result.style.display = 'block';
+    } else {
+      const r    = await fetch('/api/tracking?tracking_number='+encodeURIComponent(resi)+'&courier='+encodeURIComponent(eksVal));
+      const json = await r.json();
+      if (!json.success || !json.data) { emptyEl.style.display='block'; badge.classList.remove('show'); return; }
+      const d       = json.data;
+      const status  = d.statusCategory || d.status || '—';
+      const stColor = status==='DELIVERED'||status==='POD'?'var(--success)':status.includes('RETUR')||status.includes('RETURN')||status==='DEX'?'var(--danger)':'var(--warn)';
+      const history = (d.history||[]).slice().reverse();
+      result.innerHTML = `
+        <div class="track-card">
+          <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:10px;margin-bottom:1rem">
+            <div>
+              <div style="font-size:15px;font-weight:700">${resi} <span style="font-size:12px;color:var(--muted)">(${json.courier||eksVal})</span></div>
+              <div style="font-size:12px;color:var(--muted);margin-top:2px">${d.RECEIVER_NAME||''} ${d.RECEIVER_REGION?'— '+d.RECEIVER_REGION:''}</div>
+            </div>
+            <span class="status-badge" style="background:rgba(0,0,0,0.3);color:${stColor};font-size:13px;padding:6px 14px">${status}</span>
+          </div>
+          <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:1rem">
+            ${[['Pengirim',d.PICKUP_NAME||'—'],['Produk',(d.GOODS_DESC||'—').slice(0,30)],['COD',d.COD_AMOUNT?'Rp'+Number(d.COD_AMOUNT).toLocaleString('id-ID'):'—']].map(([k,v])=>`<div style="background:var(--bg);padding:10px;border-radius:8px"><div style="font-size:10px;color:var(--muted);font-family:monospace;text-transform:uppercase">${k}</div><div style="font-size:13px;font-weight:600;margin-top:2px">${v}</div></div>`).join('')}
+          </div>
+          <div class="track-timeline">
+            ${history.filter(h=>h.desc).map((h,i)=>`<div class="track-item">
+              <div class="track-dot ${i===0?'active':''}"></div>
+              <div>
+                <div class="track-meta">${h.date||''}</div>
+                <div class="track-desc">${h.desc||''}</div>
+              </div>
+            </div>`).join('')}
+          </div>
+        </div>`;
+      result.style.display = 'block';
+    }
+  } catch(e) {
+    result.innerHTML = `<div class="track-card"><span style="color:var(--danger)">Error: ${e.message}</span></div>`;
+    result.style.display = 'block';
+  }
+  badge.classList.remove('show');
+}
+
+// ── INPUT RESI ────────────────────────────────────────────────────────────────
+let resiParsed = [];
+
+// Drag & drop
+const dzResi = document.getElementById('dz-resi');
+if (dzResi) {
+  dzResi.addEventListener('dragover', e => { e.preventDefault(); dzResi.classList.add('drag-over'); });
+  dzResi.addEventListener('dragleave', () => dzResi.classList.remove('drag-over'));
+  dzResi.addEventListener('drop', e => { e.preventDefault(); dzResi.classList.remove('drag-over'); if(e.dataTransfer.files[0]) parseResiFile(e.dataTransfer.files[0]); });
+}
+
+function parseResiFile(file) {
+  const reader = new FileReader();
+  reader.onload = e => {
+    try {
+      let data = [];
+      if (file.name.endsWith('.csv')) {
+        const lines = e.target.result.split('\n').filter(l=>l.trim());
+        const headers = lines[0].split(',').map(h=>h.trim().replace(/"/g,''));
+        data = lines.slice(1).map(line => {
+          const vals = line.split(',').map(v=>v.trim().replace(/"/g,''));
+          const obj = {};
+          headers.forEach((h,i) => obj[h] = vals[i]||'');
+          return obj;
+        });
+      } else {
+        const wb = XLSX.read(e.target.result, { type:'array' });
+        data = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], { defval:'' });
+      }
+
+      resiParsed = data.map(row => {
+        const keys = Object.keys(row);
+        const hpKey   = keys.find(k => /hp|telp|nomor|phone/i.test(k.replace(/\s/g,'')));
+        const resiKey = keys.find(k => /resi|awb|tracking/i.test(k));
+        let resiVal = row[resiKey];
+        if (typeof resiVal === 'number') resiVal = Math.round(resiVal).toString();
+        return { hp: String(row[hpKey]||'').trim(), resi: String(resiVal||'').trim() };
+      }).filter(r => r.resi && r.resi !== '0');
+
+      document.getElementById('resi-status').textContent = '✓ ' + resiParsed.length + ' resi dari ' + file.name;
+      document.getElementById('resi-status').style.color = 'var(--success)';
+      document.getElementById('btn-save-resi').disabled = false;
+    } catch(err) {
+      document.getElementById('resi-status').textContent = 'Error: ' + err.message;
+      document.getElementById('resi-status').style.color = 'var(--danger)';
+    }
+  };
+  if (file.name.endsWith('.csv')) reader.readAsText(file);
+  else reader.readAsArrayBuffer(file);
+}
+
+async function saveResi() {
+  if (!resiParsed.length) return;
+  const badge  = document.getElementById('loading-resi');
+  const result = document.getElementById('resi-result');
+  badge.classList.add('show');
+
+  try {
+    const hpList = [...new Set(resiParsed.map(r => r.hp.replace(/^0/,'')).filter(Boolean))];
+    const { data: orders } = await sb.from('all_orderan').select('id,hp').eq('sumber','validasi').in('hp', hpList);
+    const hpIdx = {};
+    (orders||[]).forEach(r => { hpIdx[r.hp.replace(/^0/,'')] = r.id; });
+
+    const updates = resiParsed.map(r => ({ id: hpIdx[r.hp.replace(/^0/,'')], resi: r.resi })).filter(u => u.id);
+    let saved = 0;
+    const BATCH = 50;
+    for (let i=0; i<updates.length; i+=BATCH) {
+      await Promise.all(updates.slice(i,i+BATCH).map(async u => {
+        const { error } = await sb.from('all_orderan').update({ resi: u.resi }).eq('id', u.id);
+        if (!error) saved++;
+      }));
+    }
+    result.textContent = '✓ ' + saved + ' resi tersimpan dari ' + resiParsed.length + ' data (' + updates.length + ' cocok)';
+    result.style.color = saved > 0 ? 'var(--success)' : 'var(--warn)';
+    await loadData();
+  } catch(e) {
+    result.textContent = 'Error: ' + e.message;
+    result.style.color = 'var(--danger)';
+  }
+  badge.classList.remove('show');
+}
+
+
+// ── THEME ─────────────────────────────────────────────────────────────────────
+function toggleTheme() {
+  const isLight = document.documentElement.getAttribute('data-theme') === 'light';
+  document.documentElement.setAttribute('data-theme', isLight ? 'dark' : 'light');
+  document.getElementById('theme-btn').textContent = isLight ? '🌙' : '☀️';
+  localStorage.setItem('po_theme', isLight ? 'dark' : 'light');
+}
+(function() {
+  const t = localStorage.getItem('po_theme') || 'dark';
+  if (t === 'light') {
+    document.documentElement.setAttribute('data-theme', 'light');
+    document.addEventListener('DOMContentLoaded', () => {
+      const btn = document.getElementById('theme-btn');
+      if (btn) btn.textContent = '☀️';
+    });
+  }
+})();
+
+// ── CHECKBOX + EXPORT ─────────────────────────────────────────────────────────
+function toggleAll(chkAll) {
+  document.querySelectorAll('.row-chk').forEach(c => c.checked = chkAll.checked);
+}
+
+function getSelectedData() {
+  const checked = [...document.querySelectorAll('.row-chk:checked')];
+  if (!checked.length) return filteredData; // export all if none selected
+  return checked.map(c => filteredData[parseInt(c.dataset.idx)]).filter(Boolean);
+}
+
+function exportData(fmt) {
+  const data = getSelectedData();
+  if (!data.length) return showToast('Tidak ada data');
+
+  const rows = data.map(r => ({
+    Tanggal: r.tanggal||'',
+    No: r.no||'',
+    Nama: r.nama||'',
+    HP: r.hp||'',
+    Ekspedisi: extractEks(r.pembayaran||''),
+    Resi: r.resi||'',
+    Jumlah: r.jumlah||'',
+    Kabupaten: r.kabupaten||'',
+    CS: r.cs||'',
+    'Update CRM': r.update_crm||'',
+    'Status Akhir': r.status_akhir||''
+  }));
+
+  if (fmt === 'csv') {
+    const headers = Object.keys(rows[0]);
+    const csv = [headers.join(','), ...rows.map(r => headers.map(h => '"'+(r[h]||'').toString().replace(/"/g,'""')+'"').join(','))].join('\n');
+    const blob = new Blob([csv], { type:'text/csv;charset=utf-8;' });
+    const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
+    a.download = 'progres-orderan-' + new Date().toISOString().slice(0,10) + '.csv';
+    a.click();
+  } else {
+    const ws = XLSX.utils.json_to_sheet(rows);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Progres');
+    XLSX.writeFile(wb, 'progres-orderan-' + new Date().toISOString().slice(0,10) + '.xlsx');
+  }
+}
+
+function showToast(msg) {
+  const t = document.createElement('div');
+  t.style.cssText = 'position:fixed;bottom:1rem;right:1rem;background:var(--accent);color:#fff;padding:10px 16px;border-radius:10px;font-size:13px;z-index:999';
+  t.textContent = msg;
+  document.body.appendChild(t);
+  setTimeout(() => t.remove(), 2500);
+}
+
+// ── CS FILTER ─────────────────────────────────────────────────────────────────
+function updateCSFilter() {
+  const sel = document.getElementById('filter-cs');
+  if (!sel) return;
+  const current = sel.value;
+  const csList = [...new Set(allData.map(r=>(r.cs||'').trim()).filter(Boolean))].sort();
+  sel.innerHTML = '<option value="all">Semua CS</option>' + csList.map(c=>`<option value="${c}">${c}</option>`).join('');
+  if (csList.includes(current)) sel.value = current;
+}
+
+// ── THEME ────────────────────────────────────────────────────────────────────
+function toggleTheme() {
+  const isLight = document.documentElement.getAttribute('data-theme') === 'light';
+  const newTheme = isLight ? 'dark' : 'light';
+  document.documentElement.setAttribute('data-theme', newTheme);
+  document.getElementById('theme-icon').textContent = newTheme === 'light' ? '☀️' : '🌙';
+  document.getElementById('theme-label').textContent = newTheme === 'light' ? 'Terang' : 'Gelap';
+  localStorage.setItem('po_theme', newTheme);
+}
+const savedTheme = localStorage.getItem('po_theme') || 'dark';
+if (savedTheme === 'light') {
+  document.documentElement.setAttribute('data-theme','light');
+  setTimeout(() => {
+    const icon = document.getElementById('theme-icon');
+    const label = document.getElementById('theme-label');
+    if (icon) icon.textContent = '☀️';
+    if (label) label.textContent = 'Terang';
+  }, 0);
+}
+
+// ── CHECKBOX ──────────────────────────────────────────────────────────────────
+function toggleAll(chk) {
+  document.querySelectorAll('.row-chk').forEach(c => c.checked = chk.checked);
+}
+
+function getSelectedIds() {
+  return [...document.querySelectorAll('.row-chk:checked')].map(c => parseInt(c.dataset.id));
+}
+
+// ── EXPORT ───────────────────────────────────────────────────────────────────
+function exportData() {
+  const selectedIds = getSelectedIds();
+  const rows = selectedIds.length > 0
+    ? filteredData.filter(r => selectedIds.includes(r.id))
+    : filteredData;
+
+  if (!rows.length) { alert('Tidak ada data untuk diexport'); return; }
+
+  const cols = ['tanggal','no','nama','hp','pembayaran','resi','jumlah','kabupaten','cs','update_crm','status_akhir'];
+  const headers = ['Tanggal','No','Nama','HP','Ekspedisi','Resi','Jumlah','Kabupaten','CS','Update CRM','Status Akhir'];
+  const exportRows = rows.map(r => {
+    const obj = {};
+    cols.forEach((c,i) => { obj[headers[i]] = c === 'pembayaran' ? extractEks(r[c]||'') : (r[c]||''); });
+    return obj;
+  });
+
+  const ws = XLSX.utils.json_to_sheet(exportRows);
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, 'Progres');
+  XLSX.writeFile(wb, 'progres-orderan-' + new Date().toISOString().slice(0,10) + '.xlsx');
+}
+
+// ── CS FILTER ─────────────────────────────────────────────────────────────────
+function updateCSFilter() {
+  const sel = document.getElementById('filter-cs');
+  if (!sel) return;
+  const csList = [...new Set(allData.map(r=>(r.cs||'').trim()).filter(Boolean))].sort();
+  const cur = sel.value;
+  sel.innerHTML = '<option value="all">Semua CS</option>' + csList.map(c=>`<option value="${c}">${c}</option>`).join('');
+  if (cur && csList.includes(cur)) sel.value = cur;
+}
+
+// ── RESIZABLE COLUMNS ────────────────────────────────────────────────────────
+function initResizableCols() {
+  const table = document.querySelector('table');
+  if (!table) return;
+  const cols = table.querySelectorAll('th');
+  cols.forEach(th => {
+    if (th.querySelector('.resizer')) return;
+    const resizer = document.createElement('div');
+    resizer.className = 'resizer';
+    th.appendChild(resizer);
+    let startX, startW;
+    resizer.addEventListener('mousedown', e => {
+      startX = e.pageX;
+      startW = th.offsetWidth;
+      resizer.classList.add('active');
+      document.addEventListener('mousemove', onMove);
+      document.addEventListener('mouseup', onUp);
+      e.preventDefault();
+    });
+    function onMove(e) { th.style.width = Math.max(40, startW + e.pageX - startX) + 'px'; th.style.minWidth = th.style.width; }
+    function onUp() { resizer.classList.remove('active'); document.removeEventListener('mousemove', onMove); document.removeEventListener('mouseup', onUp); }
+  });
+}
+
+function setTglPreset(preset) {
+  document.getElementById('filter-tgl-preset').value = preset;
+  // Update active button
+  ['all','today','yesterday','custom'].forEach(p => {
+    const btn = document.getElementById('btn-tgl-'+p);
+    if (btn) btn.classList.toggle('active', p === preset);
+  });
+  const customEl = document.getElementById('filter-tgl-custom');
+  customEl.style.display = preset === 'custom' ? 'inline-block' : 'none';
+  if (preset !== 'custom') loadData();
+}
+
+function setTglPreset(val) { setQuickDate(val); }
+function setTglChip(val) { setQuickDate(val); }
+
+function setQuickDate(val) {
+  const inp = document.getElementById('filter-tgl-custom');
+  if (val === 'today') {
+    inp.value = new Date().toISOString().slice(0,10);
+  } else if (val === 'yesterday') {
+    inp.value = new Date(Date.now()-86400000).toISOString().slice(0,10);
+  } else {
+    inp.value = '';
+    loadData();
+  }
+}
+
+function onCustomDate() {
+  loadData();
+}
+
+// Keep for compatibility
+function onTglPreset() {} // kept for compatibility
+
+function clearDateFilter() {
+  setTglPreset('all');
+}
+
+
+
+
+// ── TRACKING DETAIL MODAL ────────────────────────────────────────────────────
+async function openTrackModal(resi, eks) {
+  const modal  = document.getElementById('track-modal');
+  const body   = document.getElementById('tm-body');
+  const resiEl = document.getElementById('tm-resi');
+  const recvEl = document.getElementById('tm-receiver');
+  const badge  = document.getElementById('tm-status-badge');
+  const info   = document.getElementById('tm-info');
+  const alerts = document.getElementById('tm-alerts');
+
+  resiEl.textContent = resi + ' (' + eks + ')';
+  recvEl.textContent = '';
+  badge.textContent  = '';
+  badge.className    = 'status-badge';
+  info.innerHTML     = '';
+  alerts.innerHTML   = '';
+  body.innerHTML     = '<div style="text-align:center;padding:2rem;color:var(--muted)">Memuat...</div>';
+  modal.style.display = 'flex';
+
+  try {
+    let history = [], statusText = '', receiverName = '', city = '', codAmt = '', goodsDesc = '';
+
+    if (eks === 'POS') {
+      const r    = await fetch('/api/pos-tracking?resi='+encodeURIComponent(resi));
+      const json = await r.json();
+      if (!json.success || !json.data) { body.innerHTML = '<p style="color:var(--muted);text-align:center">Resi tidak ditemukan.</p>'; return; }
+      const d = json.data;
+      statusText   = d.connote_state || '—';
+      receiverName = d.connote_receiver_name || '';
+      goodsDesc    = '';
+      codAmt       = d.connote_customfield?.cod_value ? 'Rp'+Number(d.connote_customfield.cod_value).toLocaleString('id-ID') : '';
+      history = (d.connote_history||[]).filter(h=>h.content).map(h => ({
+        date : h.date||'',
+        loc  : h.location_name||'',
+        desc : h.content||'',
+        reason: h.reason_delivery||''
+      })).reverse();
+    } else {
+      const courierKey = COURIER_MAP[eks]||eks;
+      const r    = await fetch('/api/tracking?tracking_number='+encodeURIComponent(resi)+'&courier='+encodeURIComponent(courierKey));
+      const json = await r.json();
+      if (!json.success || !json.data) { body.innerHTML = '<p style="color:var(--muted);text-align:center">Resi tidak ditemukan.</p>'; return; }
+      const d = json.data;
+      statusText   = d.statusCategory || d.status || '—';
+      receiverName = d.RECEIVER_NAME || '';
+      city         = d.RECEIVER_REGION || d.RECEIVER_CITY || '';
+      codAmt       = d.COD_AMOUNT ? 'Rp'+Number(d.COD_AMOUNT).toLocaleString('id-ID') : '';
+      goodsDesc    = d.GOODS_DESC || '';
+      history = (d.history||[]).filter(h=>h.desc).map(h => ({
+        date : h.date||'',
+        loc  : '',
+        desc : h.desc||'',
+        reason: ''
+      })).reverse();
+    }
+
+    // Status badge
+    const sc = statusClass(statusText);
+    badge.className   = 'status-badge ' + sc;
+    badge.textContent = statusText;
+    recvEl.textContent = receiverName + (city ? ' — ' + city : '');
+
+    // Info grid
+    info.innerHTML = [
+      ['Produk', goodsDesc||'—'],
+      ['COD', codAmt||'—'],
+      ['Total History', history.length + ' update'],
+    ].map(([k,v]) => `<div style="background:var(--bg);padding:10px;border-radius:8px">
+      <div style="font-size:10px;color:var(--muted);font-family:monospace;text-transform:uppercase">${k}</div>
+      <div style="font-size:13px;font-weight:600;margin-top:2px">${v}</div>
+    </div>`).join('');
+
+    // Detect fail attempts
+    const failAttempts = history.filter(h => {
+      const d = h.desc.toUpperCase();
+      return d.includes('UNDELIVERED') || d.includes('DEX') || d.includes('GAGAL') ||
+             d.includes('TIDAK DITEMPAT') || d.includes('REFUSED') || d.includes('ATTEMPT') ||
+             d.includes('TIDAK BISA') || d.includes('NOT HOME') || d.includes('ANTAR ULANG') ||
+             h.reason;
+    });
+
+    // Detect near destination
+    const nearDest = history.some(h => {
+      const d = h.desc.toUpperCase();
+      return d.includes('DELIVERY COURIER') || d.includes('OUT FOR DELIVERY') ||
+             d.includes('DIANTAR') || d.includes('KURIR') || d.includes('RUNSHEET') ||
+             d.includes('WITH DELIVERY');
+    });
+
+    // Alert banners
+    let alertHTML = '';
+    if (nearDest && statusText !== 'DELIVERED' && statusText !== 'POD') {
+      alertHTML += `<div style="background:#1e3a2f;border:1px solid #22c55e;border-radius:10px;padding:10px 14px;font-size:12px;color:#86efac;margin-bottom:8px">
+        🚚 <b>Paket sedang dalam proses pengiriman ke penerima</b> — Hubungi customer untuk siap-siap menerima paket & menyiapkan uang COD!
+      </div>`;
+    }
+    if (failAttempts.length >= 2) {
+      alertHTML += `<div style="background:#450a0a;border:1px solid #ef4444;border-radius:10px;padding:10px 14px;font-size:12px;color:#fca5a5;margin-bottom:8px">
+        ⚠️ <b>Gagal diantar ${failAttempts.length}x</b> — Segera hubungi customer! Risiko retur tinggi.
+      </div>`;
+    } else if (failAttempts.length === 1) {
+      alertHTML += `<div style="background:#431407;border:1px solid #f97316;border-radius:10px;padding:10px 14px;font-size:12px;color:#fdba74;margin-bottom:8px">
+        ⚠️ <b>Gagal diantar 1x</b> — Konfirmasi ulang alamat dan hubungi customer.
+      </div>`;
+    }
+    alerts.innerHTML = alertHTML;
+
+    // History timeline
+    body.innerHTML = `
+      <div style="font-size:11px;font-weight:700;color:var(--muted);font-family:monospace;text-transform:uppercase;margin-bottom:8px">History Pengiriman</div>
+      ${history.map((h,i) => {
+        const isFail = h.reason || h.desc.toUpperCase().includes('UNDELIVERED') || h.desc.toUpperCase().includes('DEX') || h.desc.toUpperCase().includes('GAGAL') || h.desc.toUpperCase().includes('TIDAK DITEMPAT');
+        const dotColor = i===0 ? (isFail?'#f87171':'#4ade80') : 'var(--border2)';
+        return `<div style="display:flex;gap:12px;padding:8px 0;border-bottom:0.5px solid var(--border);align-items:flex-start">
+          <div style="width:8px;height:8px;border-radius:50%;background:${dotColor};margin-top:5px;flex-shrink:0"></div>
+          <div style="flex:1">
+            <div style="font-size:11px;color:var(--muted);font-family:monospace">${h.date}</div>
+            ${h.loc ? `<div style="font-size:11px;color:var(--muted);font-weight:600">${h.loc}</div>` : ''}
+            <div style="font-size:12px;${i===0?'font-weight:600':''}margin-top:2px">${h.desc}</div>
+            ${h.reason ? `<div style="font-size:11px;color:#f87171;margin-top:2px">⚠ ${h.reason}</div>` : ''}
+          </div>
+        </div>`;
+      }).join('')}`;
+
+  } catch(e) {
+    body.innerHTML = `<p style="color:var(--danger)">Error: ${e.message}</p>`;
+  }
+}
+
+// ── UPDATE STATUS MANUAL ──────────────────────────────────────────────────────
+let updateStatusRowIdx = -1;
+
+function showUpdateStatus(idx) {
+  const row = filteredData[idx];
+  if (!row) return;
+  updateStatusRowIdx = idx;
+  const crm = row.update_crm||'ON PROSES';
+  document.getElementById('us-nama').textContent = row.nama + ' — ' + (row.hp||'') + ' — ' + (row.kabupaten||'');
+  // Set current status
+  const sel = document.getElementById('us-status');
+  const statusBase = crm.startsWith('UNDELL')?'UNDELL':crm.startsWith('ON PROSES')?'ON PROSES':crm;
+  sel.value = ['ON PROSES','UNDELL','DELIVERED','RETUR'].includes(statusBase) ? statusBase : 'ON PROSES';
+  document.getElementById('us-catatan').value = '';
+  document.getElementById('update-status-modal').style.display = 'flex';
+}
+
+async function saveUpdateStatus() {
+  const row = filteredData[updateStatusRowIdx];
+  if (!row) return;
+  const badge    = document.getElementById('loading-us');
+  const status   = document.getElementById('us-status').value;
+  const catatan  = document.getElementById('us-catatan').value.trim();
+  badge.classList.add('show');
+
+  const newCRM    = catatan ? status + ' (' + catatan + ')' : status;
+  const newStatus = status === 'DELIVERED' ? 'DELIVERED' : status === 'RETUR' ? 'RETUR' : null;
+
+  try {
+    const upd = { update_crm: newCRM };
+    if (newStatus) upd.status_akhir = newStatus;
+    const { error } = await sb.from('all_orderan').update(upd).eq('id', row.id);
+    if (error) throw error;
+    showToast('Status berhasil diupdate!');
+    document.getElementById('update-status-modal').style.display = 'none';
+    await loadData();
+  } catch(e) {
+    showToast('Error: ' + e.message, true);
+  }
+  badge.classList.remove('show');
+}
+
+function showToast(msg, isError) {
+  let toast = document.getElementById('toast-msg');
+  if (!toast) {
+    toast = document.createElement('div');
+    toast.id = 'toast-msg';
+    toast.style.cssText = 'position:fixed;bottom:20px;left:50%;transform:translateX(-50%);padding:10px 20px;border-radius:10px;font-size:13px;font-weight:600;z-index:9999;transition:opacity 0.3s';
+    document.body.appendChild(toast);
+  }
+  toast.textContent = msg;
+  toast.style.background = isError ? 'var(--danger)' : 'var(--success)';
+  toast.style.color = '#fff';
+  toast.style.opacity = '1';
+  setTimeout(() => toast.style.opacity = '0', 2500);
+}
+
+// Close modals on backdrop click
+document.addEventListener('click', function(e) {
+  if (e.target?.id === 'update-status-modal') e.target.style.display = 'none';
+  if (e.target?.id === 'alert-modal') e.target.style.display = 'none';
+});
+
+
+
+// ── TRACKING DETAIL MODAL ────────────────────────────────────────────────────
+async function openTrackModal(resi, eks) {
+  const modal  = document.getElementById('track-modal');
+  const body   = document.getElementById('tm-body');
+  const resiEl = document.getElementById('tm-resi');
+  const recvEl = document.getElementById('tm-receiver');
+  const badge  = document.getElementById('tm-status-badge');
+  const info   = document.getElementById('tm-info');
+  const alerts = document.getElementById('tm-alerts');
+
+  resiEl.textContent = resi + ' (' + eks + ')';
+  recvEl.textContent = '';
+  badge.textContent  = '';
+  badge.className    = 'status-badge';
+  info.innerHTML     = '';
+  alerts.innerHTML   = '';
+  body.innerHTML     = '<div style="text-align:center;padding:2rem;color:var(--muted)">Memuat...</div>';
+  modal.style.display = 'flex';
+
+  try {
+    let history = [], statusText = '', receiverName = '', city = '', codAmt = '', goodsDesc = '';
+
+    if (eks === 'POS') {
+      const r    = await fetch('/api/pos-tracking?resi='+encodeURIComponent(resi));
+      const json = await r.json();
+      if (!json.success || !json.data) { body.innerHTML = '<p style="color:var(--muted);text-align:center">Resi tidak ditemukan.</p>'; return; }
+      const d = json.data;
+      statusText   = d.connote_state || '—';
+      receiverName = d.connote_receiver_name || '';
+      goodsDesc    = '';
+      codAmt       = d.connote_customfield?.cod_value ? 'Rp'+Number(d.connote_customfield.cod_value).toLocaleString('id-ID') : '';
+      history = (d.connote_history||[]).filter(h=>h.content).map(h => ({
+        date : h.date||'',
+        loc  : h.location_name||'',
+        desc : h.content||'',
+        reason: h.reason_delivery||''
+      })).reverse();
+    } else {
+      const courierKey = COURIER_MAP[eks]||eks;
+      const r    = await fetch('/api/tracking?tracking_number='+encodeURIComponent(resi)+'&courier='+encodeURIComponent(courierKey));
+      const json = await r.json();
+      if (!json.success || !json.data) { body.innerHTML = '<p style="color:var(--muted);text-align:center">Resi tidak ditemukan.</p>'; return; }
+      const d = json.data;
+      statusText   = d.statusCategory || d.status || '—';
+      receiverName = d.RECEIVER_NAME || '';
+      city         = d.RECEIVER_REGION || d.RECEIVER_CITY || '';
+      codAmt       = d.COD_AMOUNT ? 'Rp'+Number(d.COD_AMOUNT).toLocaleString('id-ID') : '';
+      goodsDesc    = d.GOODS_DESC || '';
+      history = (d.history||[]).filter(h=>h.desc).map(h => ({
+        date : h.date||'',
+        loc  : '',
+        desc : h.desc||'',
+        reason: ''
+      })).reverse();
+    }
+
+    // Status badge
+    const sc = statusClass(statusText);
+    badge.className   = 'status-badge ' + sc;
+    badge.textContent = statusText;
+    recvEl.textContent = receiverName + (city ? ' — ' + city : '');
+
+    // Info grid
+    info.innerHTML = [
+      ['Produk', goodsDesc||'—'],
+      ['COD', codAmt||'—'],
+      ['Total History', history.length + ' update'],
+    ].map(([k,v]) => `<div style="background:var(--bg);padding:10px;border-radius:8px">
+      <div style="font-size:10px;color:var(--muted);font-family:monospace;text-transform:uppercase">${k}</div>
+      <div style="font-size:13px;font-weight:600;margin-top:2px">${v}</div>
+    </div>`).join('');
+
+    // Detect fail attempts
+    const failAttempts = history.filter(h => {
+      const d = h.desc.toUpperCase();
+      return d.includes('UNDELIVERED') || d.includes('DEX') || d.includes('GAGAL') ||
+             d.includes('TIDAK DITEMPAT') || d.includes('REFUSED') || d.includes('ATTEMPT') ||
+             d.includes('TIDAK BISA') || d.includes('NOT HOME') || d.includes('ANTAR ULANG') ||
+             h.reason;
+    });
+
+    // Detect near destination
+    const nearDest = history.some(h => {
+      const d = h.desc.toUpperCase();
+      return d.includes('DELIVERY COURIER') || d.includes('OUT FOR DELIVERY') ||
+             d.includes('DIANTAR') || d.includes('KURIR') || d.includes('RUNSHEET') ||
+             d.includes('WITH DELIVERY');
+    });
+
+    // Alert banners
+    let alertHTML = '';
+    if (nearDest && statusText !== 'DELIVERED' && statusText !== 'POD') {
+      alertHTML += `<div style="background:#1e3a2f;border:1px solid #22c55e;border-radius:10px;padding:10px 14px;font-size:12px;color:#86efac;margin-bottom:8px">
+        🚚 <b>Paket sedang dalam proses pengiriman ke penerima</b> — Hubungi customer untuk siap-siap menerima paket & menyiapkan uang COD!
+      </div>`;
+    }
+    if (failAttempts.length >= 2) {
+      alertHTML += `<div style="background:#450a0a;border:1px solid #ef4444;border-radius:10px;padding:10px 14px;font-size:12px;color:#fca5a5;margin-bottom:8px">
+        ⚠️ <b>Gagal diantar ${failAttempts.length}x</b> — Segera hubungi customer! Risiko retur tinggi.
+      </div>`;
+    } else if (failAttempts.length === 1) {
+      alertHTML += `<div style="background:#431407;border:1px solid #f97316;border-radius:10px;padding:10px 14px;font-size:12px;color:#fdba74;margin-bottom:8px">
+        ⚠️ <b>Gagal diantar 1x</b> — Konfirmasi ulang alamat dan hubungi customer.
+      </div>`;
+    }
+    alerts.innerHTML = alertHTML;
+
+    // History timeline
+    body.innerHTML = `
+      <div style="font-size:11px;font-weight:700;color:var(--muted);font-family:monospace;text-transform:uppercase;margin-bottom:8px">History Pengiriman</div>
+      ${history.map((h,i) => {
+        const isFail = h.reason || h.desc.toUpperCase().includes('UNDELIVERED') || h.desc.toUpperCase().includes('DEX') || h.desc.toUpperCase().includes('GAGAL') || h.desc.toUpperCase().includes('TIDAK DITEMPAT');
+        const dotColor = i===0 ? (isFail?'#f87171':'#4ade80') : 'var(--border2)';
+        return `<div style="display:flex;gap:12px;padding:8px 0;border-bottom:0.5px solid var(--border);align-items:flex-start">
+          <div style="width:8px;height:8px;border-radius:50%;background:${dotColor};margin-top:5px;flex-shrink:0"></div>
+          <div style="flex:1">
+            <div style="font-size:11px;color:var(--muted);font-family:monospace">${h.date}</div>
+            ${h.loc ? `<div style="font-size:11px;color:var(--muted);font-weight:600">${h.loc}</div>` : ''}
+            <div style="font-size:12px;${i===0?'font-weight:600':''}margin-top:2px">${h.desc}</div>
+            ${h.reason ? `<div style="font-size:11px;color:#f87171;margin-top:2px">⚠ ${h.reason}</div>` : ''}
+          </div>
+        </div>`;
+      }).join('')}`;
+
+  } catch(e) {
+    body.innerHTML = `<p style="color:var(--danger)">Error: ${e.message}</p>`;
+  }
+}
+
+// ── UPDATE STATUS MANUAL ──────────────────────────────────────────────────────
+let updateStatusRowId = null;
+let selectedNewStatus = null;
+
+function showUpdateStatus(idx) {
+  const row = filteredData[idx];
+  if (!row) return;
+  updateStatusRowId = row.id;
+  selectedNewStatus = null;
+  document.getElementById('us-nama').textContent = row.nama + ' — ' + (row.kabupaten||'') + ' | Status: ' + (row.update_crm||'—');
+  document.querySelectorAll('.us-btn').forEach(b => b.style.borderColor = 'var(--border)');
+  document.getElementById('btn-save-status').disabled = true;
+  document.getElementById('update-status-modal').style.display = 'flex';
+}
+
+function selectStatus(status) {
+  selectedNewStatus = status;
+  document.querySelectorAll('.us-btn').forEach(b => b.style.borderColor = 'var(--border)');
+  event.target.closest('.us-btn').style.borderColor = 'var(--accent)';
+  document.getElementById('btn-save-status').disabled = false;
+}
+
+async function saveUpdateStatus() {
+  if (!updateStatusRowId || !selectedNewStatus) return;
+  const badge = document.getElementById('loading-us');
+  badge.classList.add('show');
+  document.getElementById('btn-save-status').disabled = true;
+
+  try {
+    const upd = { update_crm: selectedNewStatus };
+    if (selectedNewStatus === 'DELIVERED') upd.status_akhir = 'DELIVERED';
+    if (selectedNewStatus === 'RETUR') upd.status_akhir = 'RETUR';
+
+    const { error } = await sb.from('all_orderan').update(upd).eq('id', updateStatusRowId);
+    if (error) throw error;
+
+    showToast('Status berhasil diupdate!');
+    document.getElementById('update-status-modal').style.display = 'none';
+    await loadData();
+  } catch(e) {
+    alert('Error: ' + e.message);
+  }
+  badge.classList.remove('show');
+}
+
+// Simple toast
+function showToast(msg) {
+  let toast = document.getElementById('simple-toast');
+  if (!toast) {
+    toast = document.createElement('div');
+    toast.id = 'simple-toast';
+    toast.style.cssText = 'position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:#22c55e;color:#fff;padding:10px 20px;border-radius:20px;font-size:13px;z-index:9999;font-weight:600';
+    document.body.appendChild(toast);
+  }
+  toast.textContent = msg;
+  toast.style.display = 'block';
+  setTimeout(() => toast.style.display = 'none', 2500);
+}
+
+// Close modals on backdrop click
+document.addEventListener('click', function(e) {
+  if (e.target?.id === 'update-status-modal') e.target.style.display = 'none';
+  if (e.target?.id === 'alert-modal') e.target.style.display = 'none';
+});
+
+// ── ALERT SYSTEM ─────────────────────────────────────────────────────────────
+async function checkAlerts() {
+  alertItems = [];
+
+  // Fetch data untuk cek - same filter as main table
+  const csFilterVal = document.getElementById('filter-cs')?.value || 'all';
+  let alertQuery = sb.from('all_orderan')
+    .select('id,nama,hp,resi,update_crm,kabupaten,cs,pembayaran')
+    .eq('sumber','validasi');
+
+  // CS filter
+  if (userRole !== 'admin' && userRole !== 'spv' && userCSName) {
+    alertQuery = alertQuery.ilike('cs', userCSName);
+  } else if (csFilterVal !== 'all') {
+    alertQuery = alertQuery.eq('cs', csFilterVal);
+  }
+
+  const { data } = await alertQuery;
+  if (!data?.length) return;
+  const myData = data;
+
+  // 1. Undell
+  const undell = myData.filter(r => (r.update_crm||'').startsWith('UNDELL'));
+  if (undell.length) {
+    alertItems.push({
+      icon: '🔴',
+      title: undell.length + ' Orderan UNDELL (Gagal Antar)',
+      desc: 'Paket gagal diantarkan dan perlu tindak lanjut segera.',
+      color: 'var(--danger)',
+      items: undell.map(r => ({
+        nama: r.nama,
+        hp: r.hp,
+        kabupaten: r.kabupaten,
+        detail: (r.update_crm||'').replace('UNDELL','').replace(/[()]/g,'').trim()
+      }))
+    });
+  }
+
+  // 2. Gagal kirim (1st, 2nd, dst) - dari update_crm detail
+  const FAIL_KEYWORDS = ['REFUSED','TIDAK DITEMPAT','CANNOT BE CONTACTED','NOT HOME',
+    'RESCHEDULE','ANTAR ULANG','ATTEMPT','GAGAL','NOT FOUND','NO RESPONSE',
+    'UNREACHABLE','REJECT','TOLAK','TIDAK BISA DIHUBUNGI'];
+
+  const fail1st = myData.filter(r => {
+    const crm = (r.update_crm||'').toUpperCase();
+    return crm.startsWith('ON PROSES') && FAIL_KEYWORDS.some(k => crm.includes(k));
+  });
+
+  const fail2nd = myData.filter(r => {
+    const crm = (r.update_crm||'').toUpperCase();
+    // 2nd attempt biasanya ada "2ND" atau "SECOND" atau percobaan ke-2
+    return crm.startsWith('ON PROSES') && (crm.includes('2ND') || crm.includes('SECOND') || crm.includes('KE-2') || crm.includes('KE 2') || crm.includes('ATTEMPT 2'));
+  });
+
+  // Remove 2nd attempt from 1st list to avoid double count
+  const fail1Only = fail1st.filter(r => !fail2nd.includes(r));
+
+  if (fail1Only.length) {
+    alertItems.push({
+      icon: '🟠',
+      title: fail1Only.length + ' Orderan Gagal Kirim Pertama',
+      desc: 'Penerima tidak ada / menolak di percobaan pertama. Segera konfirmasi ulang.',
+      color: '#f97316',
+      items: fail1Only.map(r => ({
+        nama: r.nama, hp: r.hp, kabupaten: r.kabupaten,
+        detail: (r.update_crm||'').replace('ON PROSES','').replace(/[()]/g,'').trim().slice(0,80)
+      }))
+    });
+  }
+
+  if (fail2nd.length) {
+    alertItems.push({
+      icon: '🔺',
+      title: fail2nd.length + ' Orderan Gagal Kirim ke-2+',
+      desc: 'Sudah percobaan ke-2 atau lebih. Risiko retur tinggi — hubungi penerima sekarang!',
+      color: '#dc2626',
+      items: fail2nd.map(r => ({
+        nama: r.nama, hp: r.hp, kabupaten: r.kabupaten,
+        detail: (r.update_crm||'').replace('ON PROSES','').replace(/[()]/g,'').trim().slice(0,80)
+      }))
+    });
+  }
+
+  if (!alertItems.length) return;
+
+  // Show banner
+  const total = alertItems.reduce((s,a) => s+a.items.length, 0);
+  const banner = document.getElementById('alert-banner');
+  const bannerText = document.getElementById('alert-banner-text');
+  bannerText.textContent = total + ' orderan perlu perhatian: ' + alertItems.map(a=>a.title).join(' · ');
+  banner.style.display = 'flex';
+
+  // Show popup modal on load (only once per session)
+  const shownKey = 'po_alert_shown_' + new Date().toDateString();
+  if (!sessionStorage.getItem(shownKey)) {
+    sessionStorage.setItem(shownKey, '1');
+    showAlertDetail();
+  }
+}
+
+function showAlertDetail() {
+  const modal = document.getElementById('alert-modal');
+  const body  = document.getElementById('alert-modal-body');
+
+  body.innerHTML = alertItems.map(a => `
+    <div style="margin-bottom:1.25rem">
+      <div style="font-size:14px;font-weight:700;color:${a.color};margin-bottom:4px">${a.icon} ${a.title}</div>
+      <div style="font-size:12px;color:var(--muted);margin-bottom:8px">${a.desc}</div>
+      <div style="display:flex;flex-direction:column;gap:6px;max-height:160px;overflow-y:auto">
+        ${a.items.slice(0,10).map(item => `
+          <div style="background:var(--bg);padding:8px 12px;border-radius:8px;font-size:12px">
+            <span style="font-weight:600">${item.nama||'—'}</span>
+            <span style="color:var(--muted);margin-left:8px">${item.hp||''}</span>
+            ${item.detail ? `<div style="color:var(--muted);font-size:11px;margin-top:2px">${item.detail}</div>` : ''}
+          </div>`).join('')}
+        ${a.items.length > 10 ? `<div style="text-align:center;font-size:11px;color:var(--muted);padding:4px">...dan ${a.items.length-10} lainnya</div>` : ''}
+      </div>
+    </div>`).join('');
+
+  modal.style.display = 'flex';
+}
+
+
+
+// Restore last tab
+const lastTab = sessionStorage.getItem('po_tab');
+if (lastTab) switchTab(lastTab);
+</script>
+
+<!-- Update Status Modal -->
+<div id="update-status-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:1000;align-items:center;justify-content:center">
+  <div style="background:var(--bg2);border-radius:20px;padding:1.5rem;max-width:420px;width:90%">
+    <div style="font-size:15px;font-weight:700;margin-bottom:4px">Update Status Manual</div>
+    <div style="font-size:12px;color:var(--muted);margin-bottom:1rem" id="us-nama"></div>
+    <div style="margin-bottom:1rem">
+      <label style="font-size:12px;color:var(--muted);display:block;margin-bottom:6px">Status CRM</label>
+      <select id="us-status" class="filter-select" style="width:100%">
+        <option value="ON PROSES">ON PROSES</option>
+        <option value="UNDELL">UNDELL</option>
+        <option value="DELIVERED">DELIVERED</option>
+        <option value="RETUR">RETUR</option>
+      </select>
+    </div>
+    <div style="margin-bottom:1rem">
+      <label style="font-size:12px;color:var(--muted);display:block;margin-bottom:6px">Catatan (opsional)</label>
+      <input type="text" id="us-catatan" class="search-input" style="width:100%" placeholder="mis: penerima minta reschedule besok" />
+    </div>
+    <div style="display:flex;gap:8px">
+      <button class="btn-primary" onclick="saveUpdateStatus()" style="flex:1;justify-content:center">💾 Simpan</button>
+      <button class="btn-secondary" onclick="document.getElementById('update-status-modal').style.display='none'">Batal</button>
+    </div>
+    <span class="loading-badge" id="loading-us" style="margin-top:8px">menyimpan...</span>
+  </div>
+</div>
+
+</body>
+</html>
