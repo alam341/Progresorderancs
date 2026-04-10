@@ -751,33 +751,28 @@ async function loadData() {
 
   while (true) {
     let query = sb.from('all_orderan')
-      .select('id,no,nama,hp,tanggal,pembayaran,resi,jumlah,cs,kabupaten,update_crm,status_akhir')
+      .select('id,no,nama,hp,tanggal,pembayaran,resi,jumlah,cs,kabupaten,update_crm,status_akhir,created_at')
       .eq('sumber','validasi')
-      .order('tanggal', { ascending: false });
+      .order('created_at', { ascending: false });
+
+    // Filter tanggal server-side pakai created_at
+    if (tglVal) {
+      query = query
+        .gte('created_at', tglVal + 'T00:00:00')
+        .lte('created_at', tglVal + 'T23:59:59');
+    }
 
     // CS hanya lihat data miliknya — pakai nama inti (fleksibel, case-insensitive)
     if (userRole !== 'admin' && userRole !== 'spv' && userCSName) {
       const namaInti = extractNamaInti(userCSName);
       query = query.ilike('cs', '%' + namaInti + '%');
     }
+
     const { data, error } = await query.range(from, from+999);
     if (error || !data?.length) break;
     all.push(...data);
     if (data.length < 1000) break;
     from += 1000;
-  }
-
-  // Filter tanggal client-side (format kolom tanggal: MM/DD/YYYY HH:MM:SS)
-  if (tglVal) {
-    const [fy, fm, fd] = tglVal.split('-').map(Number);
-    all = all.filter(r => {
-      const raw = (r.tanggal || '').split(' ')[0]; // ambil bagian tanggal saja
-      if (!raw) return false;
-      const parts = raw.split('/');
-      if (parts.length < 3) return false;
-      const [m, d, y] = parts.map(Number);
-      return y === fy && m === fm && d === fd;
-    });
   }
 
   allData = all;
