@@ -327,6 +327,45 @@ th .resizer:hover, th .resizer.active { background:var(--accent); opacity:0.6; }
 .track-reason { font-size:11px; color:var(--danger); margin-top:3px; }
 
 /* ── MOBILE ─────────────────────────────────────────────────── */
+
+/* ── DATE RANGE PICKER ──────────────────────────────────── */
+.drp-wrap { position:relative; display:inline-block; }
+.drp-trigger { display:flex; align-items:center; gap:8px; background:var(--bg3); border:1px solid var(--border); color:var(--text); padding:7px 14px; border-radius:10px; cursor:pointer; font-size:13px; font-weight:500; transition:all 0.15s; user-select:none; font-family:'Plus Jakarta Sans',sans-serif; white-space:nowrap; }
+.drp-trigger:hover { border-color:var(--accent); }
+.drp-trigger.active { border-color:var(--accent); background:var(--accent-glow); }
+.drp-panel { display:none; position:absolute; top:calc(100% + 8px); left:0; background:var(--bg2); border:1px solid var(--border); border-radius:16px; box-shadow:0 16px 48px rgba(0,0,0,0.4); z-index:300; overflow:hidden; min-width:500px; }
+.drp-panel.open { display:flex; }
+@media(max-width:600px) { .drp-panel { min-width:unset; width:calc(100vw - 2rem); flex-direction:column; } }
+.drp-presets { width:155px; border-right:1px solid var(--border); padding:0.75rem 0; flex-shrink:0; }
+.drp-preset-group { font-size:10px; font-weight:700; color:var(--muted); text-transform:uppercase; letter-spacing:0.6px; padding:0.5rem 1rem 0.25rem; }
+.drp-preset-item { display:flex; align-items:center; gap:8px; padding:8px 1rem; font-size:12px; color:var(--muted2); cursor:pointer; transition:all 0.12s; }
+.drp-preset-item:hover { background:var(--accent-glow); color:var(--text); }
+.drp-preset-item.selected { color:var(--accent); font-weight:600; }
+.drp-preset-dot { width:7px; height:7px; border-radius:50%; border:2px solid var(--border2); flex-shrink:0; }
+.drp-preset-item.selected .drp-preset-dot { background:var(--accent); border-color:var(--accent); }
+.drp-cal { padding:1rem; flex:1; min-width:0; }
+.drp-cal-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:0.75rem; }
+.drp-cal-title { font-size:14px; font-weight:700; }
+.drp-cal-nav { background:none; border:1px solid var(--border); color:var(--muted2); width:28px; height:28px; border-radius:8px; cursor:pointer; font-size:14px; display:flex; align-items:center; justify-content:center; transition:all 0.12s; }
+.drp-cal-nav:hover { border-color:var(--accent); color:var(--accent); }
+.drp-days-header { display:grid; grid-template-columns:repeat(7,1fr); margin-bottom:4px; }
+.drp-day-name { text-align:center; font-size:10px; font-weight:600; color:var(--muted); padding:4px 0; }
+.drp-days { display:grid; grid-template-columns:repeat(7,1fr); gap:1px; }
+.drp-day { text-align:center; padding:7px 2px; font-size:12px; font-weight:500; border-radius:8px; cursor:pointer; transition:background 0.1s; color:var(--text); user-select:none; }
+.drp-day:hover:not(.drp-other) { background:rgba(99,102,241,0.15); }
+.drp-other { color:var(--muted); opacity:0.35; pointer-events:none; }
+.drp-today { font-weight:800; color:var(--accent); }
+.drp-in-range { background:var(--accent-glow); border-radius:0; }
+.drp-start { background:var(--accent) !important; color:#fff !important; font-weight:700; border-radius:8px 0 0 8px; }
+.drp-end   { background:var(--accent) !important; color:#fff !important; font-weight:700; border-radius:0 8px 8px 0; }
+.drp-start.drp-end { border-radius:8px; }
+.drp-footer { padding:0.75rem 1rem; border-top:1px solid var(--border); display:flex; align-items:center; justify-content:space-between; gap:8px; flex-wrap:wrap; }
+.drp-range-label { font-size:11px; color:var(--muted2); font-family:'JetBrains Mono',monospace; flex:1; }
+.drp-btn-apply { background:var(--accent); color:#fff; border:none; padding:6px 14px; border-radius:8px; font-size:12px; font-weight:700; cursor:pointer; font-family:'Plus Jakarta Sans',sans-serif; }
+.drp-btn-apply:hover { opacity:0.9; }
+.drp-btn-clear { background:none; border:1px solid var(--border); color:var(--muted); padding:6px 10px; border-radius:8px; font-size:12px; cursor:pointer; font-family:'Plus Jakarta Sans',sans-serif; transition:all 0.12s; }
+.drp-btn-clear:hover { border-color:var(--danger); color:var(--danger); }
+
 @media(max-width:768px) {
   .header { padding:0 14px; height:52px; }
   .logo { font-size:15px; }
@@ -480,13 +519,7 @@ if (_t === 'light') document.documentElement.setAttribute('data-theme','light');
     </div>
 
     <div class="toolbar">
-      <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap">
-        <input type="date" id="filter-tgl-custom" onchange="loadData()"
-          style="border:1px solid var(--border);border-radius:10px;padding:7px 12px;background:var(--bg);color:var(--text);font-size:12px;outline:none" />
-        <button class="btn-secondary" onclick="document.getElementById('filter-tgl-custom').value=new Date().toISOString().slice(0,10);loadData();" style="font-size:12px">Hari Ini</button>
-        <button class="btn-secondary" onclick="document.getElementById('filter-tgl-custom').value=new Date(Date.now()-86400000).toISOString().slice(0,10);loadData();" style="font-size:12px">Kemarin</button>
-        <button class="btn-secondary" onclick="document.getElementById('filter-tgl-custom').value='';loadData();" style="font-size:12px">Semua</button>
-      </div>
+      <div class="drp-wrap"><div class="drp-trigger" id="main-drp-trigger">📅 <span>Hari Ini</span></div><div class="drp-panel" id="main-drp-panel"></div></div>
       <select class="filter-select" id="filter-status" onchange="renderTable()">
         <option value="all">Semua Status</option>
         <option value="ON PROSES">On Proses</option>
@@ -660,11 +693,14 @@ function onAuthReady() {
   }
 
   // Default filter: HARI INI
-  const todayStr = new Date().toISOString().slice(0, 10);
-  const tglInput = document.getElementById('filter-tgl-custom');
-  if (tglInput && !tglInput.value) tglInput.value = todayStr;
+  // Init date range picker
+  const _today = new Date(); _today.setHours(0,0,0,0);
+  window._drpMain = new DateRangePicker('main-drp', function(s, e) {
+    window._drpStart = s; window._drpEnd = e;
+    loadData();
+  });
+  window._drpMain.setPreset(_today, _today);
 
-  loadData();
   // Cek mood setelah auth siap
   setTimeout(() => { if(typeof checkAndShowMood==='function') checkAndShowMood(); }, 800);
 }
@@ -746,8 +782,9 @@ function statusLabel(crm) {
 async function loadData() {
   let all = [], from = 0;
 
-  // Baca filter tanggal dari input (format: YYYY-MM-DD)
-  const tglVal = document.getElementById('filter-tgl-custom')?.value || '';
+  const _s = window._drpStart;
+  const _e = window._drpEnd || _s;
+  const _iso = d => d ? d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0') : '';
 
   while (true) {
     let query = sb.from('all_orderan')
@@ -755,11 +792,10 @@ async function loadData() {
       .eq('sumber','validasi')
       .order('created_at', { ascending: false });
 
-    // Filter tanggal server-side pakai created_at
-    if (tglVal) {
+    if (_s) {
       query = query
-        .gte('created_at', tglVal + 'T00:00:00')
-        .lte('created_at', tglVal + 'T23:59:59');
+        .gte('created_at', _iso(_s) + 'T00:00:00')
+        .lte('created_at', _iso(_e) + 'T23:59:59');
     }
 
     // CS hanya lihat data miliknya — pakai nama inti (fleksibel, case-insensitive)
