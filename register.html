@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Daftar CS — Progres Orderan</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
+* { margin:0; padding:0; box-sizing:border-box; }
+body { font-family:'Plus Jakarta Sans',system-ui,sans-serif; background:#0b0f1a; min-height:100vh; display:flex; align-items:center; justify-content:center; padding:1rem; }
+.card { background:#111827; border:1px solid #1e2d45; border-radius:20px; padding:2.5rem; width:100%; max-width:420px; box-shadow:0 24px 64px rgba(0,0,0,0.5); }
+.back { display:inline-flex; align-items:center; gap:6px; font-size:12px; color:#5b7394; cursor:pointer; margin-bottom:1.5rem; transition:color 0.15s; background:none; border:none; font-family:'Plus Jakarta Sans',sans-serif; }
+.back:hover { color:#3b82f6; }
+.title { font-size:20px; font-weight:800; color:#e8edf5; margin-bottom:0.25rem; }
+.sub { font-size:13px; color:#5b7394; margin-bottom:1.75rem; }
+label { display:block; font-size:11px; font-weight:600; color:#5b7394; margin-bottom:6px; text-transform:uppercase; letter-spacing:0.5px; }
+input, select { width:100%; padding:11px 14px; background:#0b0f1a; border:1px solid #1e2d45; border-radius:10px; color:#e8edf5; font-size:14px; outline:none; transition:border-color 0.15s; font-family:'Plus Jakarta Sans',sans-serif; }
+input:focus, select:focus { border-color:#3b82f6; }
+select option { background:#111827; }
+.field { margin-bottom:1rem; }
+.hint { font-size:11px; color:#5b7394; margin-top:4px; }
+.btn { width:100%; padding:12px; background:#3b82f6; color:#fff; border:none; border-radius:12px; font-size:14px; font-weight:700; cursor:pointer; margin-top:0.5rem; transition:all 0.15s; font-family:'Plus Jakarta Sans',sans-serif; box-shadow:0 4px 14px rgba(59,130,246,0.3); }
+.btn:hover { background:#2563eb; transform:translateY(-1px); }
+.btn:disabled { opacity:0.5; cursor:not-allowed; transform:none; }
+.msg { font-size:12px; margin-top:0.75rem; display:none; padding:8px 12px; border-radius:8px; }
+.msg.err { color:#fb7185; background:rgba(244,63,94,0.1); border:1px solid rgba(244,63,94,0.2); }
+.msg.ok  { color:#34d399; background:rgba(16,185,129,0.1); border:1px solid rgba(16,185,129,0.2); }
+</style>
+</head>
+<body>
+<div class="card">
+  <button class="back" onclick="window.location.href='/index.html'">← Kembali ke Login</button>
+  <div class="title">👤 Daftar CS</div>
+  <div class="sub">Buat akun Customer Service baru</div>
+
+  <div class="field">
+    <label>Username</label>
+    <input type="text" id="username" placeholder="contoh: ambar" autocomplete="off" />
+  </div>
+  <div class="field">
+    <label>Nama CS</label>
+    <input type="text" id="nama" placeholder="contoh: Ambar" />
+    <div class="hint">Otomatis jadi "Pengirim Ambar"</div>
+  </div>
+  <div class="field">
+    <label>Team</label>
+    <select id="team">
+      <option value="">— Pilih Team —</option>
+      <option value="Ghazi">Team Ghazi</option>
+      <option value="Herba">Team Herba</option>
+      <option value="Zaydan">Team Zaydan</option>
+    </select>
+  </div>
+  <div class="field">
+    <label>Password</label>
+    <input type="password" id="password" placeholder="min 6 karakter" />
+  </div>
+  <div class="field">
+    <label>Konfirmasi Password</label>
+    <input type="password" id="password2" placeholder="ulangi password" onkeydown="if(event.key==='Enter')register()" />
+  </div>
+  <div class="msg" id="msg"></div>
+  <button class="btn" id="btn-reg" onclick="register()">Daftar Sekarang</button>
+</div>
+<script>
+const DOMAIN = '@internal.app';
+let sb = null;
+
+async function getConfig() {
+  const cached = sessionStorage.getItem('po_cfg');
+  if (cached) return JSON.parse(cached);
+  const res = await fetch('/api/config');
+  if (!res.ok) throw new Error('Gagal memuat konfigurasi.');
+  const cfg = await res.json();
+  sessionStorage.setItem('po_cfg', JSON.stringify(cfg));
+  return cfg;
+}
+
+(async () => {
+  const cfg = await getConfig();
+  sb = supabase.createClient(cfg.authUrl, cfg.authKey);
+  const { data } = await sb.auth.getSession();
+  if (data.session) window.location.href = '/app.html';
+})();
+
+async function register() {
+  if (!sb) return;
+  const username = document.getElementById('username').value.trim().toLowerCase();
+  const namaRaw  = document.getElementById('nama').value.trim();
+  const team     = document.getElementById('team').value;
+  const pass     = document.getElementById('password').value;
+  const pass2    = document.getElementById('password2').value;
+  const msgEl    = document.getElementById('msg');
+  msgEl.style.display = 'none';
+
+  const cap  = s => s.replace(/\b\w/g, c => c.toUpperCase());
+  const nama = namaRaw.toLowerCase().startsWith('pengirim ') ? cap(namaRaw) : 'Pengirim ' + cap(namaRaw);
+
+  if (!username)       { show('err','Username wajib diisi'); return; }
+  if (!namaRaw)        { show('err','Nama CS wajib diisi'); return; }
+  if (!team)           { show('err','Pilih team terlebih dahulu'); return; }
+  if (pass.length < 6) { show('err','Password minimal 6 karakter'); return; }
+  if (pass !== pass2)  { show('err','Password tidak sama'); return; }
+
+  const btn = document.getElementById('btn-reg');
+  btn.disabled = true; btn.textContent = 'Memproses...';
+
+  const { error } = await sb.auth.signUp({
+    email: username + DOMAIN, password: pass,
+    options: { data: { role: 'cs', cs_name: nama, username, team } }
+  });
+
+  if (error) {
+    const m = (error.message||'').toLowerCase();
+    show('err', m.includes('already') ? 'Username sudah dipakai.' : error.message);
+    btn.disabled = false; btn.textContent = 'Daftar Sekarang';
+    return;
+  }
+
+  const { data: loginData, error: loginErr } = await sb.auth.signInWithPassword({ email: username + DOMAIN, password: pass });
+  if (loginErr) { show('ok','Akun dibuat! Silakan login.'); btn.disabled=false; btn.textContent='Daftar Sekarang'; return; }
+  const meta = loginData.user?.user_metadata || {};
+  sessionStorage.setItem('po_cs_name', meta.cs_name || nama);
+  sessionStorage.setItem('po_username', username);
+  sessionStorage.setItem('po_role', 'cs');
+  sessionStorage.setItem('po_team', team);
+  window.location.href = '/app.html';
+
+  function show(type, msg) { msgEl.textContent=msg; msgEl.className='msg '+type; msgEl.style.display='block'; }
+}
+</script>
+</body>
+</html>
