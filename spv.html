@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dashboard SPV — Progres Orderan</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap');
+* { margin:0; padding:0; box-sizing:border-box; }
+body { font-family:'Plus Jakarta Sans',system-ui,sans-serif; background:#0b0f1a; color:#e8edf5; min-height:100vh; }
+.header { background:#111827; border-bottom:1px solid #1e2d45; padding:0 1.75rem; height:58px; display:flex; align-items:center; justify-content:space-between; position:sticky; top:0; z-index:50; gap:12px; }
+.logo { font-size:17px; font-weight:800; color:#e8edf5; letter-spacing:-0.3px; }
+.logo span { color:#a855f7; }
+.user-info { display:flex; align-items:center; gap:8px; }
+.badge { font-size:12px; font-weight:500; color:#a78bfa; padding:4px 10px; background:rgba(168,85,247,0.1); border-radius:20px; border:1px solid rgba(168,85,247,0.2); }
+.btn-logout { background:transparent; border:1px solid #1e2d45; color:#5b7394; padding:5px 14px; border-radius:20px; cursor:pointer; font-size:12px; font-weight:500; transition:all 0.15s; font-family:'Plus Jakarta Sans',sans-serif; }
+.btn-logout:hover { border-color:#f43f5e; color:#f43f5e; }
+.main { padding:1.5rem; max-width:1200px; margin:0 auto; }
+.page-title { font-size:22px; font-weight:800; margin-bottom:0.25rem; letter-spacing:-0.3px; }
+.page-sub { font-size:13px; color:#5b7394; margin-bottom:1.5rem; }
+.date-bar { display:flex; align-items:center; gap:8px; margin-bottom:1.5rem; flex-wrap:wrap; }
+.date-btn { background:#1a2235; border:1px solid #1e2d45; color:#8ba3bf; padding:6px 14px; border-radius:20px; font-size:12px; font-weight:500; cursor:pointer; transition:all 0.15s; font-family:'Plus Jakarta Sans',sans-serif; }
+.date-btn:hover { border-color:#a855f7; color:#c084fc; }
+.date-btn.active { background:#a855f7; border-color:#a855f7; color:#fff; }
+input[type=date] { background:#1a2235; border:1px solid #1e2d45; color:#e8edf5; padding:6px 12px; border-radius:10px; font-size:12px; outline:none; font-family:'Plus Jakarta Sans',sans-serif; }
+input[type=date]:focus { border-color:#a855f7; }
+.team-section { margin-bottom:2rem; }
+.team-header { display:flex; align-items:center; gap:10px; margin-bottom:1rem; }
+.team-name { font-size:16px; font-weight:700; }
+.team-count { font-size:12px; color:#5b7394; background:#1a2235; padding:3px 10px; border-radius:20px; }
+.mood-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(160px,1fr)); gap:10px; }
+.mood-card { background:#111827; border:1px solid #1e2d45; border-radius:14px; padding:16px; text-align:center; transition:all 0.2s; }
+.mood-card:hover { border-color:#2a3f5f; transform:translateY(-2px); }
+.mood-card.no-mood { opacity:0.45; border-style:dashed; }
+.mood-emoji { font-size:36px; margin-bottom:8px; display:block; }
+.mood-cs-name { font-size:13px; font-weight:600; color:#e8edf5; margin-bottom:3px; }
+.mood-label { font-size:11px; color:#5b7394; font-weight:500; }
+.mood-time { font-size:10px; color:#5b7394; margin-top:4px; font-family:'JetBrains Mono',monospace; }
+.mood-card.m-bahagia  { border-color:rgba(251,191,36,0.3); }
+.mood-card.m-semangat { border-color:rgba(251,191,36,0.3); }
+.mood-card.m-onfire   { border-color:rgba(251,146,60,0.3); }
+.mood-card.m-siap     { border-color:rgba(52,211,153,0.3); }
+.mood-card.m-biasa    { border-color:rgba(148,163,184,0.2); }
+.mood-card.m-lelah    { border-color:rgba(148,163,184,0.2); }
+.mood-card.m-sedih    { border-color:rgba(99,179,237,0.3); }
+.mood-card.m-stres    { border-color:rgba(244,63,94,0.3); }
+.mood-card.m-sakit    { border-color:rgba(244,63,94,0.3); }
+.summary-bar { display:flex; gap:8px; flex-wrap:wrap; margin-bottom:1.5rem; }
+.sum-pill { background:#1a2235; border:1px solid #1e2d45; border-radius:20px; padding:6px 14px; font-size:12px; display:flex; align-items:center; gap:6px; }
+.sum-pill span { font-weight:700; }
+.empty-team { text-align:center; padding:2rem; color:#5b7394; font-size:13px; background:#111827; border:1px dashed #1e2d45; border-radius:14px; }
+.loading { text-align:center; padding:3rem; color:#5b7394; }
+</style>
+</head>
+<body>
+<div class="header">
+  <div class="logo">Progres<span>Orderan</span> <span style="font-size:13px;color:#5b7394;font-weight:500">SPV</span></div>
+  <div class="user-info">
+    <div class="badge" id="spv-badge">👑 SPV</div>
+    <button class="btn-logout" onclick="logout()">Keluar</button>
+  </div>
+</div>
+
+<div class="main">
+  <div class="page-title">Dashboard Kondisi Team</div>
+  <div class="page-sub" id="spv-sub">Pantau mood & kondisi CS hari ini</div>
+
+  <div class="date-bar">
+    <button class="date-btn active" id="btn-today" onclick="setDate('today')">Hari Ini</button>
+    <button class="date-btn" id="btn-yesterday" onclick="setDate('yesterday')">Kemarin</button>
+    <input type="date" id="date-picker" onchange="loadMood()" />
+  </div>
+
+  <div class="summary-bar" id="summary-bar"></div>
+  <div id="mood-content"><div class="loading">Memuat data...</div></div>
+</div>
+
+<script>
+const DOMAIN = '@internal.app';
+let sbAuth = null, sbData = null;
+let spvTeam = '', spvName = '';
+const TEAMS = ['Ghazi','Herba','Zaydan'];
+const MOODS = {
+  'Bahagia':    {emoji:'😄', cls:'m-bahagia'},
+  'Semangat':   {emoji:'🤩', cls:'m-semangat'},
+  'Biasa Aja':  {emoji:'😌', cls:'m-biasa'},
+  'Lelah':      {emoji:'😴', cls:'m-lelah'},
+  'Sedih':      {emoji:'😢', cls:'m-sedih'},
+  'Stres':      {emoji:'😤', cls:'m-stres'},
+  'On Fire!':   {emoji:'🔥', cls:'m-onfire'},
+  'Kurang Sehat':{emoji:'🤒',cls:'m-sakit'},
+  'Siap Tempur':{emoji:'💪', cls:'m-siap'},
+};
+
+async function getConfig() {
+  const cached = sessionStorage.getItem('po_cfg');
+  if (cached) return JSON.parse(cached);
+  const res = await fetch('/api/config');
+  if (!res.ok) throw new Error('Config error');
+  const cfg = await res.json();
+  sessionStorage.setItem('po_cfg', JSON.stringify(cfg));
+  return cfg;
+}
+
+async function initApp() {
+  try {
+    const cfg = await getConfig();
+    sbAuth = supabase.createClient(cfg.authUrl, cfg.authKey);
+    sbData = supabase.createClient(cfg.dataUrl, cfg.dataKey);
+
+    // Cek auth
+    const storedRole = sessionStorage.getItem('po_role');
+    const storedTeam = sessionStorage.getItem('po_team');
+    const storedName = sessionStorage.getItem('po_cs_name');
+
+    if (storedRole === 'spv' && storedName) {
+      spvTeam = storedTeam || 'all';
+      spvName = storedName;
+    } else {
+      const { data } = await sbAuth.auth.getSession();
+      if (!data.session) { window.location.href = '/'; return; }
+      const meta = data.session.user?.user_metadata || {};
+      if (meta.role !== 'spv' && meta.role !== 'admin') { window.location.href = '/app.html'; return; }
+      spvTeam = meta.team || 'all';
+      spvName = meta.spv_name || meta.cs_name || '';
+      sessionStorage.setItem('po_role', meta.role);
+      sessionStorage.setItem('po_team', spvTeam);
+      sessionStorage.setItem('po_cs_name', spvName);
+    }
+
+    document.getElementById('spv-badge').textContent = '👑 ' + (spvName || 'SPV');
+    document.getElementById('spv-sub').textContent = spvTeam === 'all'
+      ? 'Pantau mood semua team — Ghazi, Herba, Zaydan'
+      : `Pantau mood Team ${spvTeam}`;
+
+    // Set default date ke hari ini
+    const today = new Date().toISOString().slice(0,10);
+    document.getElementById('date-picker').value = today;
+    loadMood();
+  } catch(e) {
+    document.getElementById('mood-content').innerHTML = `<div class="loading" style="color:#f43f5e">Error: ${e.message}</div>`;
+  }
+}
+initApp();
+
+function setDate(preset) {
+  document.getElementById('btn-today').classList.toggle('active', preset==='today');
+  document.getElementById('btn-yesterday').classList.toggle('active', preset==='yesterday');
+  const dp = document.getElementById('date-picker');
+  dp.value = preset === 'today'
+    ? new Date().toISOString().slice(0,10)
+    : new Date(Date.now()-86400000).toISOString().slice(0,10);
+  loadMood();
+}
+
+async function loadMood() {
+  // Reset active state kalau manual date
+  const today = new Date().toISOString().slice(0,10);
+  const yesterday = new Date(Date.now()-86400000).toISOString().slice(0,10);
+  const picked = document.getElementById('date-picker').value;
+  document.getElementById('btn-today').classList.toggle('active', picked===today);
+  document.getElementById('btn-yesterday').classList.toggle('active', picked===yesterday);
+
+  document.getElementById('mood-content').innerHTML = '<div class="loading">Memuat data mood...</div>';
+  document.getElementById('summary-bar').innerHTML = '';
+
+  const teamsToShow = spvTeam === 'all' ? TEAMS : [spvTeam];
+
+  try {
+    // Ambil semua CS dari Supabase DATA (kolom cs & team dari all_orderan)
+    const { data: orderData } = await sbData
+      .from('all_orderan')
+      .select('cs,team')
+      .in('team', teamsToShow)
+      .not('cs','is',null);
+
+    // Dedupe CS per team
+    const csPerTeam = {};
+    teamsToShow.forEach(t => csPerTeam[t] = new Set());
+    (orderData||[]).forEach(r => {
+      if (r.team && r.cs && csPerTeam[r.team]) csPerTeam[r.team].add(r.cs.trim());
+    });
+
+    // Ambil mood log hari ini dari Supabase AUTH
+    const { data: moodData } = await sbAuth
+      .from('mood_log')
+      .select('cs_name,team,mood,mood_emoji,created_at')
+      .eq('tanggal', picked);
+
+    const moodByCS = {};
+    (moodData||[]).forEach(m => { moodByCS[m.cs_name] = m; });
+
+    // Summary
+    const allMoods = moodData || [];
+    const moodCounts = {};
+    allMoods.forEach(m => { moodCounts[m.mood] = (moodCounts[m.mood]||0)+1; });
+    const summaryEl = document.getElementById('summary-bar');
+    if (allMoods.length) {
+      summaryEl.innerHTML = Object.entries(moodCounts)
+        .sort((a,b)=>b[1]-a[1])
+        .map(([mood,count]) => {
+          const m = MOODS[mood] || {emoji:'😐'};
+          return `<div class="sum-pill">${m.emoji} ${mood} <span>${count}</span></div>`;
+        }).join('');
+    }
+
+    // Render per team
+    let html = '';
+    teamsToShow.forEach(team => {
+      const csList = [...csPerTeam[team]].sort();
+      html += `<div class="team-section">
+        <div class="team-header">
+          <div class="team-name">🏢 Team ${team}</div>
+          <div class="team-count">${csList.length} CS</div>
+        </div>`;
+      if (!csList.length) {
+        html += `<div class="empty-team">Belum ada CS di team ini.</div>`;
+      } else {
+        html += `<div class="mood-grid">`;
+        csList.forEach(cs => {
+          const mood = moodByCS[cs];
+          if (mood) {
+            const m = MOODS[mood.mood] || {emoji:'😐',cls:''};
+            const time = new Date(mood.created_at).toLocaleTimeString('id-ID',{hour:'2-digit',minute:'2-digit'});
+            html += `<div class="mood-card ${m.cls}">
+              <span class="mood-emoji">${m.emoji}</span>
+              <div class="mood-cs-name">${cs.replace('Pengirim ','')}</div>
+              <div class="mood-label">${mood.mood}</div>
+              <div class="mood-time">${time} WIB</div>
+            </div>`;
+          } else {
+            html += `<div class="mood-card no-mood">
+              <span class="mood-emoji">❓</span>
+              <div class="mood-cs-name">${cs.replace('Pengirim ','')}</div>
+              <div class="mood-label" style="color:#5b7394">Belum isi</div>
+            </div>`;
+          }
+        });
+        html += `</div>`;
+      }
+      html += `</div>`;
+    });
+    document.getElementById('mood-content').innerHTML = html || '<div class="loading">Tidak ada data.</div>';
+  } catch(e) {
+    document.getElementById('mood-content').innerHTML = `<div class="loading" style="color:#f43f5e">Error: ${e.message}</div>`;
+  }
+}
+
+async function logout() {
+  sessionStorage.clear();
+  if (sbAuth) await sbAuth.auth.signOut();
+  window.location.href = '/';
+}
+</script>
+</body>
+</html>
