@@ -333,7 +333,7 @@ th .resizer:hover, th .resizer.active { background:var(--accent); opacity:0.6; }
 .drp-trigger { display:flex; align-items:center; gap:8px; background:var(--bg3); border:1px solid var(--border); color:var(--text); padding:7px 14px; border-radius:10px; cursor:pointer; font-size:13px; font-weight:500; transition:all 0.15s; user-select:none; font-family:'Plus Jakarta Sans',sans-serif; white-space:nowrap; }
 .drp-trigger:hover { border-color:var(--accent); }
 .drp-trigger.active { border-color:var(--accent); background:var(--accent-glow); }
-.drp-panel { display:none; position:absolute; top:calc(100% + 8px); left:0; background:var(--bg2); border:1px solid var(--border); border-radius:16px; box-shadow:0 16px 48px rgba(0,0,0,0.4); z-index:300; overflow:hidden; min-width:500px; }
+.drp-panel { display:none; position:fixed; background:var(--bg2); border:1px solid var(--border); border-radius:16px; box-shadow:0 16px 48px rgba(0,0,0,0.4); z-index:9999; overflow:hidden; min-width:480px; }
 .drp-panel.open { display:flex; }
 @media(max-width:600px) { .drp-panel { min-width:unset; width:calc(100vw - 2rem); flex-direction:column; } }
 .drp-presets { width:155px; border-right:1px solid var(--border); padding:0.75rem 0; flex-shrink:0; }
@@ -738,7 +738,25 @@ class DateRangePicker {
     });
     this.render();
   }
-  toggle(){this.panel.classList.toggle('open');this.trigger.classList.toggle('active',this.panel.classList.contains('open'));}
+  toggle(){
+    const isOpen = this.panel.classList.contains('open');
+    // Tutup semua panel lain dulu
+    document.querySelectorAll('.drp-panel.open').forEach(p => p.classList.remove('open'));
+    document.querySelectorAll('.drp-trigger.active').forEach(t => t.classList.remove('active'));
+    if (isOpen) return;
+    // Hitung posisi
+    const rect = this.trigger.getBoundingClientRect();
+    const pw = Math.max(480, window.innerWidth < 540 ? window.innerWidth - 32 : 480);
+    let left = rect.left;
+    // Kalau kepotong kanan, geser ke kiri
+    if (left + pw > window.innerWidth - 8) left = window.innerWidth - pw - 8;
+    if (left < 8) left = 8;
+    this.panel.style.top  = (rect.bottom + 8) + 'px';
+    this.panel.style.left = left + 'px';
+    this.panel.style.width = window.innerWidth < 540 ? (window.innerWidth - 32) + 'px' : '';
+    this.panel.classList.add('open');
+    this.trigger.classList.add('active');
+  }
   close(){this.panel.classList.remove('open');this.trigger.classList.remove('active');}
   iso(d){if(!d)return'';return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');}
   fmt(d){if(!d)return'';return d.toLocaleDateString('id-ID',{day:'numeric',month:'short',year:'numeric'});}
