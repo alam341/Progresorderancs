@@ -270,6 +270,73 @@ const MOODS = {
   'Stres':'😤','On Fire!':'🔥','Kurang Sehat':'🤒','Siap Tempur':'💪'
 };
 
+
+// ── DATE RANGE PICKER ─────────────────────────────────────────
+const DRP = {};
+class DateRangePicker {
+  constructor(id, onChange) {
+    this.id=id; this.onChange=onChange||function(){}; this.start=null; this.end=null; this.picking=false;
+    this.vy=new Date().getFullYear(); this.vm=new Date().getMonth();
+    this.trigger=document.getElementById(id+'-trigger'); this.panel=document.getElementById(id+'-panel');
+    DRP[id]=this;
+    this.trigger.addEventListener('click',e=>{e.stopPropagation();this.toggle();});
+    document.addEventListener('click',e=>{
+      if(this.panel.classList.contains('open')&&!this.panel.contains(e.target)&&!this.trigger.contains(e.target)){
+        this.close();
+      }
+    });
+    this.render();
+  }
+  toggle(){this.panel.classList.toggle('open');this.trigger.classList.toggle('active',this.panel.classList.contains('open'));}
+  close(){this.panel.classList.remove('open');this.trigger.classList.remove('active');}
+  iso(d){if(!d)return'';return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');}
+  fmt(d){if(!d)return'';return d.toLocaleDateString('id-ID',{day:'numeric',month:'short',year:'numeric'});}
+  setPreset(s,e){this.start=s;this.end=e;this.picking=false;if(s){this.vy=s.getFullYear();this.vm=s.getMonth();}this.render();this.updateTrigger();this.close();this.onChange(s,e);}
+  clickDay(y,m,d){const dt=new Date(y,m,d);if(!this.picking||!this.start){this.start=dt;this.end=null;this.picking=true;}else{if(dt<this.start){this.end=this.start;this.start=dt;}else{this.end=dt;}this.picking=false;this.updateTrigger();}this.renderCal();}
+  apply(){if(this.start&&!this.end)this.end=new Date(this.start);this.updateTrigger();this.close();this.onChange(this.start,this.end);}
+  clear(){this.start=null;this.end=null;this.picking=false;this.render();this.updateTrigger();this.close();this.onChange(null,null);}
+  prev(){this.vm--;if(this.vm<0){this.vm=11;this.vy--;}this.renderCal();}
+  next(){this.vm++;if(this.vm>11){this.vm=0;this.vy++;}this.renderCal();}
+  updateTrigger(){if(!this.start)this.trigger.innerHTML='📅 <span>Pilih Tanggal</span>';else if(!this.end||this.iso(this.start)===this.iso(this.end))this.trigger.innerHTML='📅 <span>'+this.fmt(this.start)+'</span>';else this.trigger.innerHTML='📅 <span>'+this.fmt(this.start)+' — '+this.fmt(this.end)+'</span>';}
+  renderCal(){
+    const y=this.vy,m=this.vm,MN=['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Agu','Sep','Okt','Nov','Des'];
+    const titleEl=this.panel.querySelector('.drp-cal-title');
+    if(titleEl)titleEl.textContent=MN[m]+' '+y;
+    const today=new Date();today.setHours(0,0,0,0);
+    const first=new Date(y,m,1).getDay(),off=(first===0)?6:first-1,dim=new Date(y,m+1,0).getDate(),dipm=new Date(y,m,0).getDate();
+    let html='';
+    for(let i=off-1;i>=0;i--)html+=`<div class="drp-day drp-other">${dipm-i}</div>`;
+    for(let d=1;d<=dim;d++){
+      const dt=new Date(y,m,d);dt.setHours(0,0,0,0);const t=dt.getTime();
+      const s=this.start?new Date(this.start).setHours(0,0,0,0):null;
+      const e=this.end?new Date(this.end).setHours(0,0,0,0):null;
+      let cls='drp-day';
+      if(t===today.getTime())cls+=' drp-today';
+      if(s&&t===s)cls+=' drp-start';
+      if(e&&t===e)cls+=' drp-end';
+      if(s&&e&&t>s&&t<e)cls+=' drp-in-range';
+      html+=`<div class="${cls}" onclick="DRP['${this.id}'].clickDay(${y},${m},${d})">${d}</div>`;
+    }
+    const rem=(off+dim)%7;if(rem>0)for(let d=1;d<=7-rem;d++)html+=`<div class="drp-day drp-other">${d}</div>`;
+    const calEl=this.panel.querySelector('.drp-cal-days');
+    if(calEl)calEl.innerHTML=html;
+    const lbl=this.panel.querySelector('.drp-range-label');
+    if(lbl){if(!this.start)lbl.textContent='Belum dipilih';else if(!this.end)lbl.textContent=this.iso(this.start)+' → ...';else lbl.textContent=this.iso(this.start)+' → '+this.iso(this.end);}
+    this.panel.querySelectorAll('.drp-preset-item').forEach(el=>{el.classList.toggle('selected',!!el.dataset.s&&this.iso(this.start)===el.dataset.s&&this.iso(this.end||this.start)===el.dataset.e);});
+  }
+  render(){
+    const today=new Date();today.setHours(0,0,0,0);
+    const yest=new Date(today);yest.setDate(today.getDate()-1);
+    const w7=new Date(today);w7.setDate(today.getDate()-6);
+    const m1s=new Date(today.getFullYear(),today.getMonth(),1);
+    const m1e=new Date(today.getFullYear(),today.getMonth()+1,0);
+    const presets=[{group:'Baru-baru ini',items:[{l:'Hari Ini',s:today,e:today},{l:'Kemarin',s:yest,e:yest},{l:'7 Hari Terakhir',s:w7,e:today}]},{group:'Bulan ini',items:[{l:'Bulan Ini',s:m1s,e:m1e}]}];
+    const presetsHtml=presets.map(g=>`<div class="drp-preset-group">${g.group}</div>${g.items.map(it=>`<div class="drp-preset-item" data-s="${this.iso(it.s)}" data-e="${this.iso(it.e)}" onclick="DRP['${this.id}'].setPreset(new Date('${this.iso(it.s)}'),new Date('${this.iso(it.e)}'))"><div class="drp-preset-dot"></div>${it.l}</div>`).join('')}`).join('');
+    this.panel.innerHTML=`<div class="drp-presets">${presetsHtml}</div><div class="drp-cal"><div class="drp-cal-header"><button class="drp-cal-nav" onclick="DRP['${this.id}'].prev()">‹</button><div class="drp-cal-title"></div><button class="drp-cal-nav" onclick="DRP['${this.id}'].next()">›</button></div><div class="drp-days-header">${['Sen','Sel','Rab','Kam','Jum','Sab','Min'].map(d=>`<div class="drp-day-name">${d}</div>`).join('')}</div><div class="drp-days drp-cal-days"></div><div class="drp-footer"><span class="drp-range-label">Belum dipilih</span><div style="display:flex;gap:6px"><button class="drp-btn-clear" onclick="DRP['${this.id}'].clear()">Reset</button><button class="drp-btn-apply" onclick="DRP['${this.id}'].apply()">Terapkan</button></div></div></div>`;
+    this.renderCal();this.updateTrigger();
+  }
+}
+
 // ── Theme ─────────────────────────────────────────────────────
 const savedTheme = localStorage.getItem('po_theme_spv') || 'dark';
 if (savedTheme === 'light') document.documentElement.setAttribute('data-theme','light');
@@ -333,10 +400,6 @@ async function initApp() {
       ? 'Pantau mood semua team'
       : 'Pantau mood Team ' + spvTeam;
 
-    // Default tanggal hari ini
-    const today = new Date().toISOString().slice(0,10);
-    document.getElementById('orderan-date').value = today;
-    document.getElementById('mood-date').value    = today;
     // Init date range pickers — default hari ini
     const today = new Date(); today.setHours(0,0,0,0);
 
