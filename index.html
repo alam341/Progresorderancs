@@ -6,25 +6,69 @@
 <title>Progres Orderan — Login</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
-  * { margin:0; padding:0; box-sizing:border-box; }
-  body { font-family:'Inter',system-ui,sans-serif; background:#0f172a; min-height:100vh; display:flex; align-items:center; justify-content:center; }
-  .login-card { background:#1e293b; border:1px solid #334155; border-radius:20px; padding:2.5rem; width:100%; max-width:400px; }
-  .logo { font-size:28px; font-weight:800; color:#fff; margin-bottom:0.25rem; }
-  .logo span { color:#6366f1; }
-  .sub { font-size:13px; color:#64748b; margin-bottom:2rem; }
-  label { display:block; font-size:12px; color:#94a3b8; margin-bottom:6px; }
-  input { width:100%; padding:10px 14px; background:#0f172a; border:1px solid #334155; border-radius:10px; color:#fff; font-size:14px; outline:none; }
-  input:focus { border-color:#6366f1; }
-  .btn { width:100%; padding:12px; background:#6366f1; color:#fff; border:none; border-radius:10px; font-size:14px; font-weight:600; cursor:pointer; margin-top:1.25rem; }
-  .btn:hover { background:#4f46e5; }
-  .error { color:#ef4444; font-size:12px; margin-top:0.5rem; display:none; }
-  .field { margin-bottom:1rem; }
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap');
+
+* { margin:0; padding:0; box-sizing:border-box; }
+body {
+  font-family:'Plus Jakarta Sans',system-ui,sans-serif;
+  background:#0b0f1a;
+  min-height:100vh;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  padding:1rem;
+}
+.login-card {
+  background:#111827;
+  border:1px solid #1e2d45;
+  border-radius:20px;
+  padding:2.5rem;
+  width:100%;
+  max-width:400px;
+  box-shadow:0 24px 64px rgba(0,0,0,0.5);
+  transition:opacity 0.2s;
+}
+.logo { font-size:26px; font-weight:800; color:#e8edf5; margin-bottom:0.2rem; letter-spacing:-0.5px; }
+.logo span { color:#3b82f6; }
+.sub { font-size:13px; color:#5b7394; margin-bottom:2rem; }
+label { display:block; font-size:11px; font-weight:600; color:#5b7394; margin-bottom:6px; text-transform:uppercase; letter-spacing:0.5px; }
+input {
+  width:100%; padding:11px 14px;
+  background:#0b0f1a; border:1px solid #1e2d45;
+  border-radius:10px; color:#e8edf5;
+  font-size:14px; outline:none;
+  transition:border-color 0.15s;
+  font-family:'Plus Jakarta Sans',sans-serif;
+}
+input:focus { border-color:#3b82f6; background:#0f1520; }
+.btn {
+  width:100%; padding:12px;
+  background:#3b82f6; color:#fff;
+  border:none; border-radius:10px;
+  font-size:14px; font-weight:700;
+  cursor:pointer; margin-top:1.25rem;
+  transition:all 0.15s;
+  font-family:'Plus Jakarta Sans',sans-serif;
+  letter-spacing:0.2px;
+  box-shadow:0 4px 14px rgba(59,130,246,0.3);
+}
+.btn:hover { background:#2563eb; transform:translateY(-1px); box-shadow:0 6px 18px rgba(59,130,246,0.4); }
+.btn:disabled { opacity:0.5; cursor:not-allowed; transform:none; box-shadow:none; }
+.error { font-size:12px; margin-top:0.5rem; display:none; padding:8px 12px; border-radius:8px; }
+.error.err { color:#fb7185; background:rgba(244,63,94,0.1); border:1px solid rgba(244,63,94,0.2); }
+.error.ok  { color:#34d399; background:rgba(16,185,129,0.1); border:1px solid rgba(16,185,129,0.2); }
+.field { margin-bottom:1rem; }
+.divider { border-top:1px solid #1e2d45; margin:1.5rem 0 1rem; }
+.link { color:#3b82f6; cursor:pointer; font-weight:600; }
+.link:hover { color:#60a5fa; text-decoration:underline; }
 </style>
 </head>
 <body>
-<div class="login-card">
+<div class="login-card" id="card">
   <div class="logo">Progres<span>Orderan</span></div>
   <div class="sub">Monitor status pengiriman orderan</div>
+
+  <!-- LOGIN -->
   <div id="login-section">
     <div class="field">
       <label>Username</label>
@@ -34,24 +78,25 @@
       <label>Password</label>
       <input type="password" id="password" placeholder="••••••••" onkeydown="if(event.key==='Enter')login()" />
     </div>
-    <div class="error" id="error-msg"></div>
-    <button class="btn" onclick="login()">Masuk</button>
+    <div class="error err" id="error-msg"></div>
+    <button class="btn" id="btn-login" onclick="login()">Masuk</button>
     <div style="text-align:center;margin-top:1rem;font-size:12px;color:#64748b">
-      Belum punya akun? <span onclick="toggleForm()" style="color:#6366f1;cursor:pointer;font-weight:600">Daftar di sini</span>
+      Belum punya akun? <span class="link" onclick="toggleForm()">Daftar di sini</span>
     </div>
   </div>
 
-  <!-- Register form -->
-  <div id="register-form" style="display:none;margin-top:1.5rem;border-top:1px solid #334155;padding-top:1.5rem">
+  <!-- REGISTER -->
+  <div id="register-form" style="display:none">
+    <div class="divider"></div>
     <div style="font-size:14px;font-weight:700;color:#fff;margin-bottom:1rem">Daftar Akun Baru</div>
     <div class="field">
       <label>Username</label>
-      <input type="text" id="reg-username" placeholder="contoh: budi" />
+      <input type="text" id="reg-username" placeholder="contoh: budi" autocomplete="off" />
     </div>
     <div class="field">
       <label>Nama CS</label>
       <input type="text" id="reg-nama" placeholder="contoh: Ambar" />
-      <div style="font-size:11px;color:#64748b;margin-top:4px">Sistem otomatis tambahkan "Pengirim " di depan nama</div>
+      <div style="font-size:11px;color:#64748b;margin-top:4px">Otomatis jadi "Pengirim Ambar"</div>
     </div>
     <div class="field">
       <label>Password</label>
@@ -62,20 +107,25 @@
       <input type="password" id="reg-password2" placeholder="ulangi password" onkeydown="if(event.key==='Enter')register()" />
     </div>
     <div class="error" id="reg-error"></div>
-    <button class="btn" onclick="register()">Daftar</button>
+    <button class="btn" id="btn-register" onclick="register()">Daftar</button>
     <div style="text-align:center;margin-top:0.75rem;font-size:12px;color:#64748b">
-      Sudah punya akun? <span onclick="toggleForm()" style="color:#6366f1;cursor:pointer;font-weight:600">Masuk</span>
+      Sudah punya akun? <span class="link" onclick="toggleForm()">Masuk</span>
     </div>
   </div>
 </div>
+
 <script>
-const DOMAIN = '@progresorderan.com';
-let sb = null; // akan diinit setelah config di-fetch
+// Email CS dibuat otomatis di background — CS cukup pakai username + password
+// Format email: username@internal.app  (tidak dikirim ke mana-mana)
+const DOMAIN = '@internal.app';
+let sb = null;
 
-// ── Tampilkan loading saat fetch config ───────────────────────────────────────
-document.querySelector('.login-card').style.opacity = '0.5';
-document.querySelector('.login-card').style.pointerEvents = 'none';
+// Disable card sampai config siap
+const card = document.getElementById('card');
+card.style.opacity = '0.5';
+card.style.pointerEvents = 'none';
 
+// ── Config (cached di sessionStorage) ────────────────────────────────────────
 async function getConfig() {
   const cached = sessionStorage.getItem('po_cfg');
   if (cached) return JSON.parse(cached);
@@ -86,95 +136,127 @@ async function getConfig() {
   return cfg;
 }
 
+// ── Init ─────────────────────────────────────────────────────────────────────
 async function initApp() {
   try {
     const cfg = await getConfig();
-
-    // Init Supabase AUTH pakai config dari server
     sb = supabase.createClient(cfg.authUrl, cfg.authKey);
 
-    // Cek kalau sudah login sebelumnya
+    // Cek sesi aktif
     const { data } = await sb.auth.getSession();
     if (data.session) {
       const meta = data.session.user?.user_metadata || {};
       sessionStorage.setItem('po_cs_name', meta.cs_name || '');
       sessionStorage.setItem('po_username', meta.username || '');
-      sessionStorage.setItem('po_auth_token', data.session.access_token || '');
       window.location.href = '/app.html';
       return;
     }
   } catch(e) {
-    document.getElementById('error-msg').textContent = e.message;
-    document.getElementById('error-msg').style.display = 'block';
+    showErr('error-msg', e.message);
   }
-  // Selesai loading — aktifkan form
-  document.querySelector('.login-card').style.opacity = '1';
-  document.querySelector('.login-card').style.pointerEvents = 'auto';
+  card.style.opacity = '1';
+  card.style.pointerEvents = 'auto';
 }
-
 initApp();
 
+// ── Login ─────────────────────────────────────────────────────────────────────
 async function login() {
   if (!sb) return;
-  const username = document.getElementById('username').value.trim().toLowerCase();
-  const pass     = document.getElementById('password').value;
-  const errEl    = document.getElementById('error-msg');
-  errEl.style.display = 'none';
-  if (!username) { errEl.textContent = 'Username tidak boleh kosong'; errEl.style.display='block'; return; }
-  const email = username.includes('@') ? username : username + DOMAIN;
-  const { data: signInData, error } = await sb.auth.signInWithPassword({ email, password: pass });
-  if (error) { errEl.textContent = 'Username atau password salah'; errEl.style.display = 'block'; return; }
-  const meta = signInData.user?.user_metadata || {};
+  const username = val('username');
+  const pass     = val('password');
+  clearErr('error-msg');
+
+  if (!username) { showErr('error-msg', 'Username tidak boleh kosong'); return; }
+  if (!pass)     { showErr('error-msg', 'Password tidak boleh kosong'); return; }
+
+  setLoading('btn-login', true);
+  const { data, error } = await sb.auth.signInWithPassword({
+    email: username + DOMAIN,
+    password: pass
+  });
+  setLoading('btn-login', false);
+
+  if (error) { showErr('error-msg', 'Username atau password salah'); return; }
+
+  const meta = data.user?.user_metadata || {};
   sessionStorage.setItem('po_cs_name', meta.cs_name || '');
   sessionStorage.setItem('po_username', meta.username || username);
-  sessionStorage.setItem('po_auth_token', signInData.session?.access_token || '');
   window.location.href = '/app.html';
 }
 
-function toggleForm() {
-  const reg      = document.getElementById('register-form');
-  const loginSec = document.getElementById('login-section');
-  const isReg    = reg.style.display === 'none';
-  reg.style.display       = isReg ? 'block' : 'none';
-  loginSec.style.display  = isReg ? 'none' : 'block';
-}
-
+// ── Register ──────────────────────────────────────────────────────────────────
 async function register() {
   if (!sb) return;
-  const username = document.getElementById('reg-username').value.trim().toLowerCase();
-  const namaRaw  = document.getElementById('reg-nama').value.trim();
-  const capitalize = s => s.replace(/\b\w/g, c => c.toUpperCase());
-  const nama     = namaRaw.toLowerCase().startsWith('pengirim ') ? capitalize(namaRaw) : 'Pengirim ' + capitalize(namaRaw);
-  const pass     = document.getElementById('reg-password').value;
-  const pass2    = document.getElementById('reg-password2').value;
-  const errEl    = document.getElementById('reg-error');
-  errEl.style.display = 'none';
+  const username = val('reg-username');
+  const namaRaw  = val('reg-nama');
+  const pass     = val('reg-password');
+  const pass2    = val('reg-password2');
+  clearErr('reg-error');
 
-  if (!username) { errEl.textContent = 'Username wajib diisi'; errEl.style.display='block'; return; }
-  if (!nama)     { errEl.textContent = 'Nama lengkap wajib diisi'; errEl.style.display='block'; return; }
-  if (pass.length < 6) { errEl.textContent = 'Password minimal 6 karakter'; errEl.style.display='block'; return; }
-  if (pass !== pass2)  { errEl.textContent = 'Password tidak sama'; errEl.style.display='block'; return; }
+  const cap = s => s.replace(/\b\w/g, c => c.toUpperCase());
+  const nama = namaRaw.toLowerCase().startsWith('pengirim ')
+    ? cap(namaRaw)
+    : 'Pengirim ' + cap(namaRaw);
 
-  const email = username + DOMAIN;
-  const { error } = await sb.auth.signUp({
-    email, password: pass,
-    options: { data: { role: 'cs', cs_name: nama, username } }
+  if (!username)       { showErr('reg-error', 'Username wajib diisi'); return; }
+  if (!namaRaw)        { showErr('reg-error', 'Nama CS wajib diisi'); return; }
+  if (pass.length < 6) { showErr('reg-error', 'Password minimal 6 karakter'); return; }
+  if (pass !== pass2)  { showErr('reg-error', 'Password tidak sama'); return; }
+
+  setLoading('btn-register', true);
+  const { data, error } = await sb.auth.signUp({
+    email    : username + DOMAIN,
+    password : pass,
+    options  : { data: { role: 'cs', cs_name: nama, username } }
   });
-  if (error) { errEl.textContent = error.message; errEl.style.display='block'; return; }
+  setLoading('btn-register', false);
 
-  const { data: loginData, error: loginErr } = await sb.auth.signInWithPassword({ email, password: pass });
+  if (error) {
+    const msg = (error.message||'').toLowerCase();
+    showErr('reg-error',
+      msg.includes('already') || msg.includes('registered')
+        ? 'Username sudah dipakai, coba yang lain.'
+        : error.message
+    );
+    return;
+  }
+
+  // Langsung login
+  const { data: loginData, error: loginErr } = await sb.auth.signInWithPassword({
+    email: username + DOMAIN, password: pass
+  });
+
   if (loginErr) {
-    errEl.textContent = 'Akun dibuat! Silakan login.';
-    errEl.style.color = '#22c55e';
-    errEl.style.display = 'block';
+    showErr('reg-error', 'Akun dibuat! Silakan login.', true);
     toggleForm();
   } else {
     const meta = loginData.user?.user_metadata || {};
     sessionStorage.setItem('po_cs_name', meta.cs_name || nama);
     sessionStorage.setItem('po_username', meta.username || username);
-    sessionStorage.setItem('po_auth_token', loginData.session?.access_token || '');
     window.location.href = '/app.html';
   }
+}
+
+// ── Helpers ───────────────────────────────────────────────────────────────────
+function val(id) { return document.getElementById(id).value.trim().toLowerCase(); }
+function showErr(id, msg, isOk) {
+  const el = document.getElementById(id);
+  el.textContent = msg;
+  el.className = 'error ' + (isOk ? 'ok' : 'err');
+  el.style.display = 'block';
+}
+function clearErr(id) { document.getElementById(id).style.display = 'none'; }
+function setLoading(id, on) {
+  const btn = document.getElementById(id);
+  btn.disabled = on;
+  btn.textContent = on ? 'Memproses...' : (id === 'btn-login' ? 'Masuk' : 'Daftar');
+}
+function toggleForm() {
+  const isLogin = document.getElementById('login-section').style.display !== 'none';
+  document.getElementById('login-section').style.display  = isLogin ? 'none'  : 'block';
+  document.getElementById('register-form').style.display  = isLogin ? 'block' : 'none';
+  clearErr('error-msg');
+  clearErr('reg-error');
 }
 </script>
 </body>
