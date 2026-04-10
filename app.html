@@ -542,6 +542,18 @@ const COURIER_MAP = {
   'POS':'POS','POS Indonesia':'POS'
 };
 
+// Ekstrak nama inti dari cs_name — buang kata umum seperti "Pengirim", "CS", "Admin"
+// Contoh: "Pengirim Ambar"  → "ambar"
+//         "Siti Rahma CS"   → "siti rahma"
+//         "Pengirim Budi S" → "budi s"
+function extractNamaInti(csName) {
+  const STOP_WORDS = ['pengirim', 'cs', 'admin', 'spv', 'supervisor', 'staff', 'kak', 'bu', 'pak'];
+  const words = csName.toLowerCase().trim().split(/\s+/);
+  const filtered = words.filter(w => !STOP_WORDS.includes(w));
+  // Kalau semua kata di-filter (nama cuma 1 kata = stop word), pakai nama asli
+  return (filtered.length > 0 ? filtered : words).join(' ');
+}
+
 function extractEks(pembayaran) {
   const src = (pembayaran||'').toUpperCase();
   if (src.includes('SICEPAT')) return 'SiCepat';
@@ -585,9 +597,10 @@ async function loadData() {
       .eq('sumber','validasi')
       .order('tanggal', { ascending: false });
 
-    // CS hanya lihat data miliknya
+    // CS hanya lihat data miliknya — pakai nama inti (fleksibel, case-insensitive)
     if (userRole !== 'admin' && userRole !== 'spv' && userCSName) {
-      query = query.ilike('cs', userCSName);
+      const namaInti = extractNamaInti(userCSName);
+      query = query.ilike('cs', '%' + namaInti + '%');
     }
     const { data, error } = await query.range(from, from+999);
     if (error || !data?.length) break;
