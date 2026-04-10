@@ -8,17 +8,50 @@
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap');
 * { margin:0; padding:0; box-sizing:border-box; }
-body { font-family:'Plus Jakarta Sans',system-ui,sans-serif; background:#0b0f1a; color:#e8edf5; min-height:100vh; }
-.header { background:#111827; border-bottom:1px solid #1e2d45; padding:0 1.75rem; height:58px; display:flex; align-items:center; justify-content:space-between; position:sticky; top:0; z-index:50; gap:12px; }
+body { font-family:'Plus Jakarta Sans',system-ui,sans-serif; background:#0b0f1a; color:#e8edf5; min-height:100vh; display:flex; flex-direction:column; }
+
+/* Header */
+.header { background:#111827; border-bottom:1px solid #1e2d45; padding:0 1.75rem; height:58px; display:flex; align-items:center; justify-content:space-between; position:sticky; top:0; z-index:100; gap:12px; flex-shrink:0; }
 .logo { font-size:17px; font-weight:800; color:#e8edf5; letter-spacing:-0.3px; }
 .logo span { color:#a855f7; }
 .user-info { display:flex; align-items:center; gap:8px; }
 .badge { font-size:12px; font-weight:500; color:#a78bfa; padding:4px 10px; background:rgba(168,85,247,0.1); border-radius:20px; border:1px solid rgba(168,85,247,0.2); }
 .btn-logout { background:transparent; border:1px solid #1e2d45; color:#5b7394; padding:5px 14px; border-radius:20px; cursor:pointer; font-size:12px; font-weight:500; transition:all 0.15s; font-family:'Plus Jakarta Sans',sans-serif; }
 .btn-logout:hover { border-color:#f43f5e; color:#f43f5e; }
-.main { padding:1.5rem; max-width:1200px; margin:0 auto; }
+
+/* Layout */
+.layout { display:flex; flex:1; overflow:hidden; }
+
+/* Sidebar */
+.sidebar { width:240px; background:#111827; border-right:1px solid #1e2d45; display:flex; flex-direction:column; padding:1.25rem 0; flex-shrink:0; position:sticky; top:58px; height:calc(100vh - 58px); overflow-y:auto; }
+.sidebar-section { font-size:10px; font-weight:700; color:#5b7394; text-transform:uppercase; letter-spacing:0.8px; padding:0 1.25rem; margin-bottom:0.5rem; margin-top:1rem; }
+.sidebar-section:first-child { margin-top:0; }
+.nav-item { display:flex; align-items:center; gap:10px; padding:10px 1.25rem; font-size:13px; font-weight:500; color:#8ba3bf; cursor:pointer; transition:all 0.15s; border-left:3px solid transparent; text-decoration:none; }
+.nav-item:hover { background:rgba(168,85,247,0.06); color:#e8edf5; }
+.nav-item.active { background:rgba(168,85,247,0.1); color:#c084fc; border-left-color:#a855f7; font-weight:600; }
+.nav-item .nav-icon { font-size:16px; flex-shrink:0; }
+.nav-item .nav-label { flex:1; }
+.nav-item .nav-badge { font-size:10px; background:rgba(168,85,247,0.2); color:#c084fc; padding:2px 7px; border-radius:20px; font-weight:600; }
+
+/* Main content */
+.main { flex:1; padding:1.75rem; overflow-y:auto; max-width:100%; }
 .page-title { font-size:22px; font-weight:800; margin-bottom:0.25rem; letter-spacing:-0.3px; }
 .page-sub { font-size:13px; color:#5b7394; margin-bottom:1.5rem; }
+
+/* Pages */
+.page { display:none; }
+.page.active { display:block; }
+
+/* Mobile sidebar toggle */
+.sidebar-toggle { display:none; background:none; border:1px solid #1e2d45; color:#8ba3bf; padding:5px 10px; border-radius:8px; cursor:pointer; font-size:16px; }
+@media(max-width:768px) {
+  .sidebar { position:fixed; top:58px; left:-240px; z-index:90; transition:left 0.25s; height:calc(100vh - 58px); }
+  .sidebar.open { left:0; box-shadow:4px 0 24px rgba(0,0,0,0.5); }
+  .sidebar-toggle { display:block; }
+  .sidebar-overlay { display:none; position:fixed; inset:0; top:58px; background:rgba(0,0,0,0.5); z-index:89; }
+  .sidebar-overlay.show { display:block; }
+  .main { padding:1rem; }
+}
 .date-bar { display:flex; align-items:center; gap:8px; margin-bottom:1.5rem; flex-wrap:wrap; }
 .date-btn { background:#1a2235; border:1px solid #1e2d45; color:#8ba3bf; padding:6px 14px; border-radius:20px; font-size:12px; font-weight:500; cursor:pointer; transition:all 0.15s; font-family:'Plus Jakarta Sans',sans-serif; }
 .date-btn:hover { border-color:#a855f7; color:#c084fc; }
@@ -55,25 +88,57 @@ input[type=date]:focus { border-color:#a855f7; }
 </head>
 <body>
 <div class="header">
-  <div class="logo">Progres<span>Orderan</span> <span style="font-size:13px;color:#5b7394;font-weight:500">SPV</span></div>
+  <div style="display:flex;align-items:center;gap:10px">
+    <button class="sidebar-toggle" onclick="toggleSidebar()">☰</button>
+    <div class="logo">Progres<span>Orderan</span> <span style="font-size:13px;color:#5b7394;font-weight:500">SPV</span></div>
+  </div>
   <div class="user-info">
     <div class="badge" id="spv-badge">👑 SPV</div>
     <button class="btn-logout" onclick="logout()">Keluar</button>
   </div>
 </div>
 
-<div class="main">
-  <div class="page-title">Dashboard Kondisi Team</div>
-  <div class="page-sub" id="spv-sub">Pantau mood & kondisi CS hari ini</div>
+<div class="sidebar-overlay" id="sidebar-overlay" onclick="toggleSidebar()"></div>
 
-  <div class="date-bar">
-    <button class="date-btn active" id="btn-today" onclick="setDate('today')">Hari Ini</button>
-    <button class="date-btn" id="btn-yesterday" onclick="setDate('yesterday')">Kemarin</button>
-    <input type="date" id="date-picker" onchange="loadMood()" />
+<div class="layout">
+  <!-- SIDEBAR -->
+  <div class="sidebar" id="sidebar">
+    <div class="sidebar-section">Menu</div>
+
+    <a class="nav-item active" id="nav-orderan" onclick="switchPage('orderan')">
+      <span class="nav-icon">📦</span>
+      <span class="nav-label">Progres Orderan</span>
+    </a>
+    <a class="nav-item" id="nav-mood" onclick="switchPage('mood')">
+      <span class="nav-icon">😊</span>
+      <span class="nav-label">Kondisi Team</span>
+    </a>
   </div>
 
-  <div class="summary-bar" id="summary-bar"></div>
-  <div id="mood-content"><div class="loading">Memuat data...</div></div>
+  <!-- MAIN CONTENT -->
+  <div class="main">
+
+    <!-- PAGE: PROGRES ORDERAN -->
+    <div class="page active" id="page-orderan">
+      <div class="page-title">📦 Progres Orderan CS</div>
+      <div class="page-sub" id="orderan-sub">Rekap status pengiriman per CS & team</div>
+      <div id="orderan-content"><div class="loading">Memuat data orderan...</div></div>
+    </div>
+
+    <!-- PAGE: KONDISI TEAM -->
+    <div class="page" id="page-mood">
+      <div class="page-title">😊 Kondisi Team</div>
+      <div class="page-sub" id="spv-sub">Pantau mood & kondisi CS hari ini</div>
+      <div class="date-bar">
+        <button class="date-btn active" id="btn-today" onclick="setDate('today')">Hari Ini</button>
+        <button class="date-btn" id="btn-yesterday" onclick="setDate('yesterday')">Kemarin</button>
+        <input type="date" id="date-picker" onchange="loadMood()" />
+      </div>
+      <div class="summary-bar" id="summary-bar"></div>
+      <div id="mood-content"><div class="loading">Memuat data...</div></div>
+    </div>
+
+  </div>
 </div>
 
 <script>
@@ -137,7 +202,7 @@ async function initApp() {
     // Set default date ke hari ini
     const today = new Date().toISOString().slice(0,10);
     document.getElementById('date-picker').value = today;
-    loadMood();
+    loadOrderan(); // default halaman pertama
   } catch(e) {
     document.getElementById('mood-content').innerHTML = `<div class="loading" style="color:#f43f5e">Error: ${e.message}</div>`;
   }
@@ -251,6 +316,105 @@ async function logout() {
   sessionStorage.clear();
   if (sbAuth) await sbAuth.auth.signOut();
   window.location.href = '/';
+}
+
+// ── SIDEBAR ────────────────────────────────────────────────────
+function toggleSidebar() {
+  const sb = document.getElementById('sidebar');
+  const ov = document.getElementById('sidebar-overlay');
+  sb.classList.toggle('open');
+  ov.classList.toggle('show');
+}
+
+function switchPage(page) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  document.getElementById('page-' + page).classList.add('active');
+  document.getElementById('nav-' + page).classList.add('active');
+  // Close sidebar on mobile
+  document.getElementById('sidebar').classList.remove('open');
+  document.getElementById('sidebar-overlay').classList.remove('show');
+  if (page === 'orderan') loadOrderan();
+  if (page === 'mood') loadMood();
+}
+
+// ── PROGRES ORDERAN ────────────────────────────────────────────
+async function loadOrderan() {
+  const el = document.getElementById('orderan-content');
+  el.innerHTML = '<div class="loading">Memuat data orderan...</div>';
+  const teamsToShow = spvTeam === 'all' ? TEAMS : [spvTeam];
+  try {
+    const { data, error } = await sbData
+      .from('all_orderan')
+      .select('cs,team,update_crm')
+      .in('team', teamsToShow)
+      .eq('sumber','validasi');
+
+    if (error) throw error;
+
+    // Rekap per CS
+    const recap = {};
+    (data||[]).forEach(r => {
+      const cs   = (r.cs||'').trim();
+      const team = (r.team||'').trim();
+      if (!cs) return;
+      if (!recap[team]) recap[team] = {};
+      if (!recap[team][cs]) recap[team][cs] = {total:0, onproses:0, undell:0, delivered:0, retur:0};
+      const crm = (r.update_crm||'').toUpperCase();
+      recap[team][cs].total++;
+      if (crm === 'DELIVERED')       recap[team][cs].delivered++;
+      else if (crm === 'RETUR')      recap[team][cs].retur++;
+      else if (crm.startsWith('UNDELL')) recap[team][cs].undell++;
+      else                           recap[team][cs].onproses++;
+    });
+
+    let html = '';
+    teamsToShow.forEach(team => {
+      const csMap = recap[team] || {};
+      const csList = Object.keys(csMap).sort();
+      const teamTotal = csList.reduce((s,cs) => s + csMap[cs].total, 0);
+      html += `<div class="team-section">
+        <div class="team-header">
+          <div class="team-name">🏢 Team ${team}</div>
+          <div class="team-count">${csList.length} CS · ${teamTotal} orderan</div>
+        </div>
+        <div style="background:#111827;border:1px solid #1e2d45;border-radius:14px;overflow:hidden;margin-bottom:1.5rem">
+          <table style="width:100%;border-collapse:collapse;font-size:13px">
+            <thead>
+              <tr style="background:#1a2235">
+                <th style="padding:10px 14px;text-align:left;font-size:10px;font-weight:700;color:#5b7394;text-transform:uppercase;letter-spacing:0.6px;border-bottom:1px solid #1e2d45">CS</th>
+                <th style="padding:10px 14px;text-align:center;font-size:10px;font-weight:700;color:#5b7394;text-transform:uppercase;letter-spacing:0.6px;border-bottom:1px solid #1e2d45">Total</th>
+                <th style="padding:10px 14px;text-align:center;font-size:10px;font-weight:700;color:#8ba3bf;text-transform:uppercase;letter-spacing:0.6px;border-bottom:1px solid #1e2d45">On Proses</th>
+                <th style="padding:10px 14px;text-align:center;font-size:10px;font-weight:700;color:#f97316;text-transform:uppercase;letter-spacing:0.6px;border-bottom:1px solid #1e2d45">Undell</th>
+                <th style="padding:10px 14px;text-align:center;font-size:10px;font-weight:700;color:#10b981;text-transform:uppercase;letter-spacing:0.6px;border-bottom:1px solid #1e2d45">Delivered</th>
+                <th style="padding:10px 14px;text-align:center;font-size:10px;font-weight:700;color:#f43f5e;text-transform:uppercase;letter-spacing:0.6px;border-bottom:1px solid #1e2d45">Retur</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${csList.length ? csList.map(cs => {
+                const d = csMap[cs];
+                const pct = d.total ? Math.round(d.delivered/d.total*100) : 0;
+                return `<tr style="border-bottom:1px solid #1e2d45;transition:background 0.1s" onmouseover="this.style.background='rgba(168,85,247,0.05)'" onmouseout="this.style.background=''">
+                  <td style="padding:11px 14px;font-weight:600">${cs.replace('Pengirim ','')}</td>
+                  <td style="padding:11px 14px;text-align:center;font-weight:700">${d.total}</td>
+                  <td style="padding:11px 14px;text-align:center;color:#8ba3bf">${d.onproses}</td>
+                  <td style="padding:11px 14px;text-align:center;color:${d.undell>0?'#f97316':'#5b7394'};font-weight:${d.undell>0?'700':'400'}">${d.undell}</td>
+                  <td style="padding:11px 14px;text-align:center">
+                    <span style="color:#10b981;font-weight:600">${d.delivered}</span>
+                    <span style="font-size:10px;color:#5b7394;margin-left:4px">${pct}%</span>
+                  </td>
+                  <td style="padding:11px 14px;text-align:center;color:${d.retur>0?'#f43f5e':'#5b7394'};font-weight:${d.retur>0?'700':'400'}">${d.retur}</td>
+                </tr>`;
+              }).join('') : '<tr><td colspan="6" style="padding:2rem;text-align:center;color:#5b7394">Belum ada data</td></tr>'}
+            </tbody>
+          </table>
+        </div>
+      </div>`;
+    });
+    el.innerHTML = html || '<div class="loading">Tidak ada data.</div>';
+  } catch(e) {
+    el.innerHTML = `<div class="loading" style="color:#f43f5e">Error: ${e.message}</div>`;
+  }
 }
 </script>
 </body>
