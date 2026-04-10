@@ -29,11 +29,14 @@
 body { font-family:'Inter',system-ui,sans-serif; background:var(--bg); color:var(--text); min-height:100vh; display:flex; flex-direction:column; }
 
 /* Header */
-.header { background:var(--bg2); border-bottom:1px solid var(--border); padding:0 1.5rem; height:56px; display:flex; align-items:center; justify-content:space-between; position:sticky; top:0; z-index:50; }
-.logo { font-size:18px; font-weight:800; color:#fff; }
+.header { background:var(--bg2); border-bottom:1px solid var(--border); padding:0 1.5rem; height:56px; display:flex; align-items:center; justify-content:space-between; position:sticky; top:0; z-index:50; gap:8px; }
+.logo { font-size:18px; font-weight:800; color:#fff; white-space:nowrap; }
 .logo span { color:var(--accent); }
-.user-info { display:flex; align-items:center; gap:10px; font-size:13px; color:var(--muted); }
-.btn-logout { background:none; border:1px solid var(--border); color:var(--muted); padding:5px 12px; border-radius:8px; cursor:pointer; font-size:12px; }
+.user-info { display:flex; align-items:center; gap:8px; font-size:13px; color:var(--muted); min-width:0; }
+#user-role-badge { font-size:12px; color:var(--text); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:160px; }
+#theme-btn { display:flex; align-items:center; gap:5px; background:var(--bg); border:1px solid var(--border); color:var(--muted); padding:5px 10px; border-radius:20px; cursor:pointer; font-size:12px; white-space:nowrap; flex-shrink:0; }
+#theme-btn:hover { border-color:var(--accent); color:var(--text); }
+.btn-logout { background:none; border:1px solid var(--border); color:var(--muted); padding:5px 12px; border-radius:8px; cursor:pointer; font-size:12px; white-space:nowrap; flex-shrink:0; }
 .btn-logout:hover { border-color:var(--danger); color:var(--danger); }
 
 /* Nav tabs */
@@ -165,10 +168,11 @@ th .resizer:hover, th .resizer.active { background:var(--accent); opacity:0.5; }
 
 @media(max-width:768px) {
   /* Header */
-  .header { padding:0 12px; height:48px; }
-  .logo { font-size:15px; }
-  #user-role-badge { font-size:11px; }
-  #theme-btn { padding:4px 8px; font-size:12px; }
+  .header { padding:0 12px; height:48px; gap:6px; }
+  .logo { font-size:14px; }
+  #user-role-badge { font-size:11px; max-width:90px; }
+  .theme-label-text { display:none; }
+  #theme-btn { padding:5px 8px; gap:0; }
   .btn-logout { padding:4px 10px; font-size:11px; }
 
   /* Nav */
@@ -244,13 +248,11 @@ if (_t === 'light') document.documentElement.setAttribute('data-theme','light');
 <div class="header">
   <div class="logo">Progres<span>Orderan</span></div>
   <div class="user-info">
-    <span id="user-email" style="display:none"></span>
-    <span id="user-role-badge" style="font-size:12px;color:var(--text)"></span>
-    <button id="theme-btn" onclick="toggleTheme()" style="background:none;border:1px solid var(--border);color:var(--muted);padding:5px 10px;border-radius:8px;cursor:pointer;font-size:16px" title="Ganti tema">🌙</button>
-    <div onclick="toggleTheme()" id="theme-toggle" style="display:flex;align-items:center;gap:6px;cursor:pointer;background:var(--bg);border:1px solid var(--border);border-radius:99px;padding:4px 10px;font-size:12px;user-select:none">
+    <span id="user-role-badge"></span>
+    <button id="theme-btn" onclick="toggleTheme()" title="Ganti tema">
       <span id="theme-icon">🌙</span>
-      <span id="theme-label" style="color:var(--muted)">Gelap</span>
-    </div>
+      <span id="theme-label" class="theme-label-text">Gelap</span>
+    </button>
     <button class="btn-logout" onclick="logout()">Keluar</button>
   </div>
 
@@ -1094,23 +1096,7 @@ async function saveResi() {
 }
 
 
-// ── THEME ─────────────────────────────────────────────────────────────────────
-function toggleTheme() {
-  const isLight = document.documentElement.getAttribute('data-theme') === 'light';
-  document.documentElement.setAttribute('data-theme', isLight ? 'dark' : 'light');
-  document.getElementById('theme-btn').textContent = isLight ? '🌙' : '☀️';
-  localStorage.setItem('po_theme', isLight ? 'dark' : 'light');
-}
-(function() {
-  const t = localStorage.getItem('po_theme') || 'dark';
-  if (t === 'light') {
-    document.documentElement.setAttribute('data-theme', 'light');
-    document.addEventListener('DOMContentLoaded', () => {
-      const btn = document.getElementById('theme-btn');
-      if (btn) btn.textContent = '☀️';
-    });
-  }
-})();
+// (theme handled below)
 
 // ── CHECKBOX + EXPORT ─────────────────────────────────────────────────────────
 function toggleAll(chkAll) {
@@ -1175,24 +1161,28 @@ function updateCSFilter() {
 }
 
 // ── THEME ────────────────────────────────────────────────────────────────────
+// ── THEME ─────────────────────────────────────────────────────────────────────
 function toggleTheme() {
   const isLight = document.documentElement.getAttribute('data-theme') === 'light';
   const newTheme = isLight ? 'dark' : 'light';
   document.documentElement.setAttribute('data-theme', newTheme);
-  document.getElementById('theme-icon').textContent = newTheme === 'light' ? '☀️' : '🌙';
+  document.getElementById('theme-icon').textContent  = newTheme === 'light' ? '☀️' : '🌙';
   document.getElementById('theme-label').textContent = newTheme === 'light' ? 'Terang' : 'Gelap';
   localStorage.setItem('po_theme', newTheme);
 }
-const savedTheme = localStorage.getItem('po_theme') || 'dark';
-if (savedTheme === 'light') {
-  document.documentElement.setAttribute('data-theme','light');
-  setTimeout(() => {
-    const icon = document.getElementById('theme-icon');
-    const label = document.getElementById('theme-label');
-    if (icon) icon.textContent = '☀️';
-    if (label) label.textContent = 'Terang';
-  }, 0);
-}
+// Terapkan tema tersimpan saat load
+(function() {
+  const t = localStorage.getItem('po_theme') || 'dark';
+  if (t === 'light') {
+    document.documentElement.setAttribute('data-theme', 'light');
+    setTimeout(() => {
+      const icon  = document.getElementById('theme-icon');
+      const label = document.getElementById('theme-label');
+      if (icon)  icon.textContent  = '☀️';
+      if (label) label.textContent = 'Terang';
+    }, 0);
+  }
+})();
 
 // ── CHECKBOX ──────────────────────────────────────────────────────────────────
 function toggleAll(chk) {
