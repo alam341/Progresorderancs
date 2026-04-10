@@ -692,14 +692,22 @@ function onAuthReady() {
     if (tabResi) tabResi.style.display = 'block';
   }
 
-  // Default filter: HARI INI
-  // Init date range picker
+  // Init date range picker — default hari ini
   const _today = new Date(); _today.setHours(0,0,0,0);
-  window._drpMain = new DateRangePicker('main-drp', function(s, e) {
-    window._drpStart = s; window._drpEnd = e;
+  window._drpStart = _today;
+  window._drpEnd   = _today;
+  window._drpMain  = new DateRangePicker('main-drp', function(s, e) {
+    window._drpStart = s;
+    window._drpEnd   = e;
     loadData();
   });
-  window._drpMain.setPreset(_today, _today);
+  // Set tampilan trigger ke "Hari Ini" tanpa trigger onChange
+  window._drpMain.start = _today;
+  window._drpMain.end   = _today;
+  window._drpMain.updateTrigger();
+
+  // Load data
+  loadData();
 
   // Cek mood setelah auth siap
   setTimeout(() => { if(typeof checkAndShowMood==='function') checkAndShowMood(); }, 800);
