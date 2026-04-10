@@ -337,18 +337,29 @@ async function initApp() {
     const today = new Date().toISOString().slice(0,10);
     document.getElementById('orderan-date').value = today;
     document.getElementById('mood-date').value    = today;
-    // Init date range pickers
+    // Init date range pickers — default hari ini
     const today = new Date(); today.setHours(0,0,0,0);
+
+    window._drpOrderanStart = today;
+    window._drpOrderanEnd   = today;
     window._drpOrderan = new DateRangePicker('orderan-drp', function(s, e) {
       window._drpOrderanStart = s; window._drpOrderanEnd = e;
       loadOrderan();
     });
+    window._drpOrderan.start = today;
+    window._drpOrderan.end   = today;
+    window._drpOrderan.updateTrigger();
+
+    window._drpMoodStart = today;
+    window._drpMoodEnd   = today;
     window._drpMood = new DateRangePicker('mood-drp', function(s, e) {
       window._drpMoodStart = s; window._drpMoodEnd = e;
       loadMood();
     });
-    // Default hari ini
-    window._drpOrderan.setPreset(today, today);
+    window._drpMood.start = today;
+    window._drpMood.end   = today;
+    window._drpMood.updateTrigger();
+
     loadOrderan();
   } catch(e) {
     document.getElementById('orderan-content').innerHTML = `<div class="loading" style="color:var(--danger)">Error: ${e.message}</div>`;
