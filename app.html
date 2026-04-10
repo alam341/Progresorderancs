@@ -665,6 +665,8 @@ function onAuthReady() {
   if (tglInput && !tglInput.value) tglInput.value = todayStr;
 
   loadData();
+  // Cek mood setelah auth siap
+  setTimeout(() => { if(typeof checkAndShowMood==='function') checkAndShowMood(); }, 800);
 }
 
 async function logout() {
@@ -1979,6 +1981,125 @@ if (lastTab) switchTab(lastTab);
     <span class="loading-badge" id="loading-us" style="margin-top:8px">menyimpan...</span>
   </div>
 </div>
+
+
+<!-- ── MOOD CHECK-IN POPUP ──────────────────────────────────── -->
+<div id="mood-overlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.75);z-index:2000;align-items:center;justify-content:center;padding:1rem">
+  <div id="mood-card" style="background:#111827;border:1px solid #1e2d45;border-radius:24px;padding:2rem;max-width:360px;width:100%;text-align:center;box-shadow:0 32px 80px rgba(0,0,0,0.6);animation:moodIn 0.3s ease">
+    <div id="mood-greeting-icon" style="font-size:48px;margin-bottom:1rem">🌙</div>
+    <div id="mood-greeting" style="font-size:20px;font-weight:800;color:#e8edf5;margin-bottom:0.25rem;line-height:1.3"></div>
+    <div style="font-size:13px;color:#5b7394;margin-bottom:1.75rem">Bagaimana perasaan kamu hari ini?</div>
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:1.5rem" id="mood-options"></div>
+    <button id="btn-mood-submit" onclick="submitMood()" disabled
+      style="width:100%;padding:13px;background:#3b82f6;color:#fff;border:none;border-radius:14px;font-size:15px;font-weight:700;cursor:pointer;transition:all 0.15s;font-family:'Plus Jakarta Sans',sans-serif;box-shadow:0 4px 14px rgba(59,130,246,0.3);opacity:0.5">
+      Mulai Kerja →
+    </button>
+    <div onclick="skipMood()" style="margin-top:0.75rem;font-size:12px;color:#5b7394;cursor:pointer;transition:color 0.15s" onmouseover="this.style.color='#8ba3bf'" onmouseout="this.style.color='#5b7394'">Lewati</div>
+  </div>
+</div>
+<style>
+@keyframes moodIn { from{opacity:0;transform:scale(0.92) translateY(20px)} to{opacity:1;transform:scale(1) translateY(0)} }
+.mood-opt { display:flex;flex-direction:column;align-items:center;gap:6px;padding:12px 8px;background:#1a2235;border:2px solid #1e2d45;border-radius:14px;cursor:pointer;transition:all 0.15s;font-size:11px;font-weight:600;color:#8ba3bf; }
+.mood-opt:hover { border-color:#3b82f6;transform:translateY(-2px); }
+.mood-opt.selected { border-color:#3b82f6;background:rgba(59,130,246,0.1);color:#e8edf5; }
+.mood-opt .me { font-size:28px; }
+</style>
+
+<script>
+// ── MOOD CHECK-IN ────────────────────────────────────────────
+const MOODS = [
+  {label:'Bahagia',    emoji:'😄'},
+  {label:'Semangat',   emoji:'🤩'},
+  {label:'Biasa Aja',  emoji:'😌'},
+  {label:'Lelah',      emoji:'😴'},
+  {label:'Sedih',      emoji:'😢'},
+  {label:'Stres',      emoji:'😤'},
+  {label:'On Fire!',   emoji:'🔥'},
+  {label:'Kurang Sehat',emoji:'🤒'},
+  {label:'Siap Tempur',emoji:'💪'},
+];
+let selectedMood = null;
+
+function getGreeting() {
+  const h = new Date().getHours();
+  if (h >= 5  && h < 11) return {icon:'☀️',  text:'Selamat Pagi'};
+  if (h >= 11 && h < 15) return {icon:'🌤',  text:'Selamat Siang'};
+  if (h >= 15 && h < 18) return {icon:'🌇',  text:'Selamat Sore'};
+  return {icon:'🌙', text:'Selamat Malam'};
+}
+
+async function checkAndShowMood() {
+  // Cek apakah sudah isi mood hari ini
+  const todayKey = 'po_mood_' + new Date().toISOString().slice(0,10);
+  if (sessionStorage.getItem(todayKey)) return; // sudah isi hari ini
+
+  // Cek ke Supabase juga
+  try {
+    const today = new Date().toISOString().slice(0,10);
+    const { data } = await sbAuth.from('mood_log')
+      .select('id').eq('tanggal', today).limit(1);
+    if (data && data.length > 0) {
+      sessionStorage.setItem(todayKey, '1');
+      return;
+    }
+  } catch(e) { /* skip */ }
+
+  showMoodPopup();
+}
+
+function showMoodPopup() {
+  const greeting = getGreeting();
+  const name = (userCSName || '').replace('Pengirim ','');
+  document.getElementById('mood-greeting-icon').textContent = greeting.icon;
+  document.getElementById('mood-greeting').textContent = greeting.text + ', ' + name + '! 👋';
+
+  const opts = document.getElementById('mood-options');
+  opts.innerHTML = MOODS.map(m => `
+    <div class="mood-opt" onclick="selectMood('${m.label}','${m.emoji}',this)">
+      <span class="me">${m.emoji}</span>
+      <span>${m.label}</span>
+    </div>`).join('');
+
+  document.getElementById('mood-overlay').style.display = 'flex';
+}
+
+function selectMood(label, emoji, el) {
+  selectedMood = {label, emoji};
+  document.querySelectorAll('.mood-opt').forEach(o => o.classList.remove('selected'));
+  el.classList.add('selected');
+  const btn = document.getElementById('btn-mood-submit');
+  btn.disabled = false;
+  btn.style.opacity = '1';
+}
+
+async function submitMood() {
+  if (!selectedMood) return;
+  const btn = document.getElementById('btn-mood-submit');
+  btn.disabled = true; btn.textContent = 'Menyimpan...';
+
+  try {
+    const { data: { user } } = await sbAuth.auth.getUser();
+    const meta = user?.user_metadata || {};
+    await sbAuth.from('mood_log').upsert({
+      user_id    : user.id,
+      cs_name    : userCSName,
+      team       : meta.team || sessionStorage.getItem('po_team') || '',
+      mood       : selectedMood.label,
+      mood_emoji : selectedMood.emoji,
+      tanggal    : new Date().toISOString().slice(0,10),
+    }, { onConflict: 'user_id,tanggal' });
+
+    const todayKey = 'po_mood_' + new Date().toISOString().slice(0,10);
+    sessionStorage.setItem(todayKey, selectedMood.label);
+  } catch(e) { console.error('Mood save error:', e); }
+
+  document.getElementById('mood-overlay').style.display = 'none';
+}
+
+function skipMood() {
+  document.getElementById('mood-overlay').style.display = 'none';
+}
+</script>
 
 </body>
 </html>
