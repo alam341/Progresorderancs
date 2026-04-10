@@ -444,28 +444,26 @@ if (_t === 'light') document.documentElement.setAttribute('data-theme','light');
 </div>
 
 <script>
-// ════════════════════════════════════════════════
-//  KONFIGURASI — GANTI SESUAI PROJECT SUPABASE ANDA
-// ════════════════════════════════════════════════
-const CONFIG = {
-  // Supabase AUTH (project BARU — sama dengan yang di index.html)
-  AUTH_URL : 'GANTI_DENGAN_SUPABASE_AUTH_URL',
-  AUTH_KEY : 'GANTI_DENGAN_SUPABASE_AUTH_ANON_KEY',
+// Dua client Supabase — diinit setelah config di-fetch dari /api/config
+let sbAuth = null; // AUTH  → cek login/logout
+let sb     = null; // DATA  → baca/tulis orderan
 
-  // Supabase DATA (project LAMA — tempat tabel all_orderan)
-  DATA_URL : 'https://lqpcnzdssvvcayqvdjxs.supabase.co',
-  DATA_KEY : 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxxcGNuemRzc3Z2Y2F5cXZkanhzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUwMTgxMDIsImV4cCI6MjA5MDU5NDEwMn0.4M4okAfJWhBD6AbL71utafrFL-ZgbVxcz3ANLnG_jH4',
-};
-
-// Dua client terpisah:
-// sbAuth  → hanya untuk cek login / logout CS
-// sb      → untuk baca/tulis data orderan
-const sbAuth = supabase.createClient(CONFIG.AUTH_URL, CONFIG.AUTH_KEY);
-const sb     = supabase.createClient(CONFIG.DATA_URL, CONFIG.DATA_KEY);
-
-// Auth check — pakai sbAuth (Supabase project baru)
 let userRole   = '';
 let userCSName = '';
+
+async function initApp() {
+  try {
+    const res = await fetch('/api/config');
+    if (!res.ok) throw new Error('Gagal memuat konfigurasi. Cek env variables di Vercel.');
+    const cfg = await res.json();
+    sbAuth = supabase.createClient(cfg.authUrl, cfg.authKey);
+    sb     = supabase.createClient(cfg.dataUrl, cfg.dataKey);
+  } catch(e) {
+    document.body.innerHTML = `<div style="color:#ef4444;padding:2rem;font-family:monospace">⚠ ${e.message}</div>`;
+    return;
+  }
+  await initAuth();
+}
 
 async function initAuth() {
   // Coba baca dari sessionStorage dulu (lebih cepat)
@@ -473,7 +471,6 @@ async function initAuth() {
   const storedToken  = sessionStorage.getItem('po_auth_token');
 
   if (storedCSName !== null && storedToken) {
-    // Sudah ada sesi dari login
     userCSName = storedCSName;
     userRole   = 'cs';
     onAuthReady();
@@ -506,7 +503,7 @@ function onAuthReady() {
     if (tabResi) tabResi.style.display = 'block';
   }
 
-  // ── Default filter: HARI INI ──────────────────
+  // Default filter: HARI INI
   const todayStr = new Date().toISOString().slice(0, 10);
   const tglInput = document.getElementById('filter-tgl-custom');
   if (tglInput && !tglInput.value) tglInput.value = todayStr;
@@ -518,11 +515,11 @@ async function logout() {
   sessionStorage.removeItem('po_cs_name');
   sessionStorage.removeItem('po_username');
   sessionStorage.removeItem('po_auth_token');
-  await sbAuth.auth.signOut();
+  if (sbAuth) await sbAuth.auth.signOut();
   window.location.href = '/';
 }
 
-initAuth();
+initApp();
 
 // Tab switching
 function switchTab(tab) {
